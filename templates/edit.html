@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Post - Blog</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .back-link {
+            display: block;
+            margin-bottom: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to all posts</a>
+
+    <h1>Edit Post</h1>
+    <form id="postForm" class="space-y-6">
+        <div>
+            <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+            <input type="text" id="title" name="title" value="{{.Post.Title}}" required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        </div>
+        <div>
+            <label for="content" class="block text-sm font-medium text-gray-700">Content (Markdown)</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <textarea id="content" name="content" rows="15" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        oninput="updatePreview()">{{.Post.Content}}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Preview</label>
+                    <div id="preview" class="mt-1 p-4 border rounded-md bg-gray-50 min-h-[300px] prose max-w-none"></div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <label for="author" class="block text-sm font-medium text-gray-700">Author</label>
+            <input type="text" id="author" name="author" value="{{.Post.Author}}" required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        </div>
+        <button type="submit"
+            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Update Post
+        </button>
+    </form>
+
+    <script>
+    function updatePreview() {
+        const content = document.getElementById('content').value;
+        fetch('/preview', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content }),
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('preview').innerHTML = html;
+        });
+    }
+
+    // Initial preview
+    updatePreview();
+
+    document.getElementById('postForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = {
+            title: document.getElementById('title').value,
+            content: document.getElementById('content').value,
+            author: document.getElementById('author').value
+        };
+
+        fetch('/posts/{{.Post.Slug}}', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = '/posts/{{.Post.Slug}}';
+            } else {
+                alert('Failed to update post');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to update post');
+        });
+    });
+    </script>
+</body>
+</html>
