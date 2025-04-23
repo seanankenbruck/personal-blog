@@ -35,6 +35,8 @@ func main() {
 
 	// Create a new Gin router
 	r := gin.Default()
+	// serve static files
+	r.Static("/static", "./static")
 
 	// Set up template engine with markdown function
 	r.SetFuncMap(template.FuncMap{
@@ -80,6 +82,9 @@ func main() {
 
 	// Register routes
 	r.GET("/", handler.HomePage(s))
+	r.GET("/portfolio", handler.PortfolioPage())
+	r.GET("/contact", handler.ContactPage())
+	r.POST("/contact", handler.SubmitContact())
 	r.GET("/posts", handler.GetPosts(s))
 	r.GET("/posts/new", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "new.html", gin.H{

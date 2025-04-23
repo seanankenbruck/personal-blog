@@ -1,0 +1,215 @@
+/* Global styles */
+body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+/* Navbar styling */
+.navbar {
+    display: flex;
+    width: 100%;
+    background: #90b9e2;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+.nav-link {
+    color: #151d26;
+    text-decoration: none;
+    margin-right: 15px;
+}
+.nav-link:hover {
+    text-decoration: underline;
+}
+.nav-link.active {
+    font-weight: bold;
+    color: #0056b3;
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-right: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+}
+.btn-danger {
+    background: #dc3545;
+}
+.btn:hover {
+    opacity: 0.9;
+}
+
+/* Back link */
+.back-link {
+    display: block;
+    margin-bottom: 20px;
+    color: #007bff;
+    text-decoration: none;
+}
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* Post list */
+.post {
+    background: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+.post-title {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    color: #333;
+}
+.post-meta {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+.post-content {
+    margin-bottom: 15px;
+}
+
+/* Full post view */
+.post-content {
+    font-size: 1.1em;
+    line-height: 1.8;
+}
+/* Markdown styles */
+.post-content h1 { font-size: 2em; margin: 0.67em 0; }
+.post-content h2 { font-size: 1.5em; margin: 0.75em 0; }
+.post-content h3 { font-size: 1.17em; margin: 0.83em 0; }
+.post-content h4 { margin: 1.12em 0; }
+.post-content h5 { font-size: 0.83em; margin: 1.5em 0; }
+.post-content h6 { font-size: 0.75em; margin: 1.67em 0; }
+.post-content ul, .post-content ol { margin: 1em 0; padding-left: 40px; }
+.post-content blockquote {
+    margin: 1em 0;
+    padding-left: 1em;
+    border-left: 4px solid #ddd;
+    color: #666;
+}
+.post-content pre {
+    background: #f5f5f5;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+.post-content code {
+    background: #f5f5f5;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+}
+.post-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Post actions */
+.post-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 20px;
+}
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+input[type="text"],
+textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1em;
+}
+textarea {
+    min-height: 200px;
+    resize: vertical;
+}
+button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #45a049;
+}
+
+/* Preview container */
+.preview-container {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 4px;
+}
+.preview-title {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #666;
+}
+.markdown-preview {
+    line-height: 1.6;
+}
+.markdown-preview h1, .markdown-preview h2, .markdown-preview h3 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+.markdown-preview p {
+    margin-bottom: 1em;
+}
+.markdown-preview code {
+    background-color: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+.markdown-preview pre {
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 3px;
+    overflow-x: auto;
+}
+.markdown-preview blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 20px;
+    margin-left: 0;
+    color: #666;
+}
+
+/* Error messages */
+.error {
+    color: red;
+    margin-top: 5px;
+}
+
+/* Alert messages */
+.alert {
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    background-color: #d4edda;
+    color: #155724;
+}

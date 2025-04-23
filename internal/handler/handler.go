@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/seanankenbruck/blog/internal/store"
+	"log"
 )
 
 func GetPosts(s *store.Store) gin.HandlerFunc {
@@ -139,6 +140,23 @@ func ContactPage() gin.HandlerFunc {
 		c.HTML(http.StatusOK, "contact.html", gin.H{
 			"Title": "Contact",
 			"Year": time.Now().Year(),
+		})
+	}
+}
+
+// SubmitContact handles the contact form submission
+func SubmitContact() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email := c.PostForm("email")
+		job := c.PostForm("job")
+		message := c.PostForm("message")
+		// TODO: send email notification here
+		log.Printf("Contact form submitted: email=%s, job=%s, message=%s", email, job, message)
+
+		c.HTML(http.StatusOK, "contact.html", gin.H{
+			"Title":   "Contact",
+			"Year":    time.Now().Year(),
+			"Success": "Thank you for your message! I will get back to you soon.",
 		})
 	}
 }
