@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sean Ankenbruck</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/portfolio" class="nav-link">Portfolio</a>
+        <a href="/contact" class="nav-link">Contact</a>
+    </nav>
+
+    <div class="container">
+        <div class="login-form">
+            <h2>Login</h2>
+            {{if .Error}}
+                <div class="error">{{.Error}}</div>
+            {{end}}
+            <form method="POST" action="/login">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        © 2025 Sean Ankenbruck • <a href="https://github.com/seanankenbruck">GitHub</a> • <a href="https://linkedin.com/in/seanankenbruck">LinkedIn</a>
+    </footer>
+
+    <script>
+        // Highlight active nav link
+        document.querySelectorAll('nav a').forEach(link => {
+            if (link.getAttribute('href') === window.location.pathname) {
+                link.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>

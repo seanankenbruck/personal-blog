@@ -6,17 +6,21 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
 	"github.com/seanankenbruck/blog/internal/handler"
+	"github.com/seanankenbruck/blog/internal/middleware"
 	"github.com/seanankenbruck/blog/internal/store"
 )
 
 func main() {
-	// Initialize the store
+	// Initialize the stores
 	s := store.NewStore()
+	userStore := store.NewUserStore()
 
 	// Add some test posts
 	s.Create(store.Post{
@@ -35,6 +39,20 @@ func main() {
 
 	// Create a new Gin router
 	r := gin.Default()
+
+	// Set up session store first
+	store := cookie.NewStore([]byte("super-secret-key"))
+	store.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 7, // 7 days
+		HttpOnly: true,
+		Secure:   false, // Set to true in production with HTTPS
+	})
+	r.Use(sessions.Sessions("session", store))
+
+	// Then apply authentication middleware
+	r.Use(middleware.AuthMiddleware())
+
 	// serve static files
 	r.Static("/static", "./static")
 
@@ -86,15 +104,15 @@ func main() {
 	r.GET("/contact", handler.ContactPage())
 	r.POST("/contact", handler.SubmitContact())
 	r.GET("/posts", handler.GetPosts(s))
-	r.GET("/posts/new", func(c *gin.Context) {
+	r.GET("/posts/new", middleware.RequireEditor(), func(c *gin.Context) {
 		c.HTML(http.StatusOK, "new.html", gin.H{
 			"Title": "Create New Post",
 			"Year": time.Now().Year(),
 		})
 	})
-	r.POST("/posts", handler.CreatePost(s))
+	r.POST("/posts", middleware.RequireEditor(), handler.CreatePost(s))
 	r.GET("/posts/:slug", handler.GetPost(s))
-	r.GET("/posts/:slug/edit", func(c *gin.Context) {
+	r.GET("/posts/:slug/edit", middleware.RequireEditor(), func(c *gin.Context) {
 		slug := c.Param("slug")
 		post, exists := s.GetBySlug(slug)
 		if !exists {
@@ -107,8 +125,11 @@ func main() {
 			"Post": post,
 		})
 	})
-	r.PUT("/posts/:slug", handler.UpdatePost(s))
-	r.DELETE("/posts/:slug", handler.DeletePost(s))
+	r.PUT("/posts/:slug", middleware.RequireEditor(), handler.UpdatePost(s))
+	r.DELETE("/posts/:slug", middleware.RequireEditor(), handler.DeletePost(s))
+	r.GET("/login", handler.LoginPage())
+	r.POST("/login", handler.Login(userStore))
+	r.GET("/logout", handler.Logout())
 
 	// Start the server
 	srv := &http.Server{

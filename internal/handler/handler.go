@@ -5,7 +5,9 @@ import (
 	"time"
 	// "strconv"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/seanankenbruck/blog/internal/domain"
 	"github.com/seanankenbruck/blog/internal/store"
 	"log"
 )
@@ -22,10 +24,13 @@ func GetPosts(s *store.Store) gin.HandlerFunc {
 		}
 
 		// Default to HTML response
+		userVal, _ := c.Get("user")
+		user, _ := userVal.(*domain.User)
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"Title": "All Posts",
 			"Year": time.Now().Year(),
 			"Posts": posts,
+			"User":  user,
 		})
 	}
 }
@@ -61,10 +66,13 @@ func GetPost(s *store.Store) gin.HandlerFunc {
 		}
 
 		// Default to HTML response
+		userVal, _ := c.Get("user")
+		user, _ := userVal.(*domain.User)
 		c.HTML(http.StatusOK, "post.html", gin.H{
 			"Title": post.Title,
 			"Year": time.Now().Year(),
 			"Post": post,
+			"User": user,
 		})
 	}
 }
@@ -109,37 +117,50 @@ func HomePage(s *store.Store) gin.HandlerFunc {
 			recentPosts = posts[len(posts)-3:]
 		}
 
+		// Default to HTML response
+		userVal, _ := c.Get("user")
+		user, _ := userVal.(*domain.User)
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"Title": "Home",
 			"Year": time.Now().Year(),
 			"Posts": recentPosts,
+			"User":  user,
 		})
 	}
 }
 
 func AboutPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		userVal, _ := c.Get("user")
+		user, _ := userVal.(*domain.User)
 		c.HTML(http.StatusOK, "about.html", gin.H{
 			"Title": "About",
 			"Year": time.Now().Year(),
+			"User":  user,
 		})
 	}
 }
 
 func PortfolioPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		userVal, _ := c.Get("user")
+		user, _ := userVal.(*domain.User)
 		c.HTML(http.StatusOK, "portfolio.html", gin.H{
 			"Title": "Portfolio",
 			"Year": time.Now().Year(),
+			"User":  user,
 		})
 	}
 }
 
 func ContactPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		userVal, _ := c.Get("user")
+		user, _ := userVal.(*domain.User)
 		c.HTML(http.StatusOK, "contact.html", gin.H{
 			"Title": "Contact",
 			"Year": time.Now().Year(),
+			"User":  user,
 		})
 	}
 }
@@ -153,10 +174,59 @@ func SubmitContact() gin.HandlerFunc {
 		// TODO: send email notification here
 		log.Printf("Contact form submitted: email=%s, job=%s, message=%s", email, job, message)
 
+		userVal, _ := c.Get("user")
+		user, _ := userVal.(*domain.User)
 		c.HTML(http.StatusOK, "contact.html", gin.H{
 			"Title":   "Contact",
 			"Year":    time.Now().Year(),
 			"Success": "Thank you for your message! I will get back to you soon.",
+			"User":    user,
 		})
+	}
+}
+
+// LoginPage renders the login form
+func LoginPage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.HTML(http.StatusOK, "login.html", gin.H{
+			"Title": "Login",
+			"Year":  time.Now().Year(),
+		})
+	}
+}
+
+// Login processes login form and sets session
+func Login(userStore *store.UserStore) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		username := c.PostForm("username")
+		password := c.PostForm("password")
+
+		user, ok := userStore.Authenticate(username, password)
+		if !ok {
+			c.HTML(http.StatusUnauthorized, "login.html", gin.H{
+				"Title": "Login",
+				"Year":  time.Now().Year(),
+				"Error": "Invalid username or password",
+			})
+			return
+		}
+
+		// Set user info in session
+		session := sessions.Default(c)
+		session.Set("username", user.Username)
+		session.Set("role", string(user.Role))
+		session.Save()
+
+		c.Redirect(http.StatusFound, "/")
+	}
+}
+
+// Logout clears the session and redirects to login
+func Logout() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		session.Clear()
+		session.Save()
+		c.Redirect(http.StatusFound, "/")
 	}
 }
