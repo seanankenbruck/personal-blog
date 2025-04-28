@@ -5,11 +5,12 @@ import (
 	"time"
 	// "strconv"
 
-	"github.com/gin-contrib/sessions"
+	//"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/seanankenbruck/blog/internal/domain"
 	"github.com/seanankenbruck/blog/internal/store"
 	"log"
+	"github.com/seanankenbruck/blog/internal/auth"
 )
 
 func GetPosts(s *store.Store) gin.HandlerFunc {
@@ -195,7 +196,7 @@ func LoginPage() gin.HandlerFunc {
 	}
 }
 
-// Login processes login form and sets session
+// Login handles user authentication and returns a JWT token
 func Login(userStore *store.UserStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.PostForm("username")
@@ -203,30 +204,97 @@ func Login(userStore *store.UserStore) gin.HandlerFunc {
 
 		user, ok := userStore.Authenticate(username, password)
 		if !ok {
-			c.HTML(http.StatusUnauthorized, "login.html", gin.H{
-				"Title": "Login",
-				"Year":  time.Now().Year(),
-				"Error": "Invalid username or password",
-			})
+			// Check if client expects JSON
+			if c.GetHeader("Accept") == "application/json" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+			} else {
+				c.HTML(http.StatusUnauthorized, "login.html", gin.H{
+					"Title": "Login",
+					"Year":  time.Now().Year(),
+					"Error": "Invalid username or password",
+				})
+			}
 			return
 		}
 
-		// Set user info in session
-		session := sessions.Default(c)
-		session.Set("username", user.Username)
-		session.Set("role", string(user.Role))
-		session.Save()
+		// Generate JWT token
+		token, err := auth.GenerateToken(user.Username, user.Role)
+		if err != nil {
+			if c.GetHeader("Accept") == "application/json" {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+			} else {
+				c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+					"Title": "Login",
+					"Year":  time.Now().Year(),
+					"Error": "An error occurred during login",
+				})
+			}
+			return
+		}
 
-		c.Redirect(http.StatusFound, "/")
+		// Check if client expects JSON
+		if c.GetHeader("Accept") == "application/json" {
+			c.JSON(http.StatusOK, gin.H{
+				"token": token,
+				"user": gin.H{
+					"username": user.Username,
+					"role":     user.Role,
+				},
+			})
+		} else {
+			// Set the token in a cookie for browser clients
+			c.SetCookie("jwt", token, 86400, "/", "", false, true)
+			c.Redirect(http.StatusFound, "/")
+		}
 	}
 }
 
-// Logout clears the session and redirects to login
+// Logout clears the JWT cookie
 func Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		session.Clear()
-		session.Save()
-		c.Redirect(http.StatusFound, "/")
+		// Clear the JWT cookie
+		c.SetCookie("jwt", "", -1, "/", "", false, true)
+
+		// If client expects JSON, return JSON response
+		if c.GetHeader("Accept") == "application/json" {
+			c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
+		} else {
+			// Otherwise redirect to login page
+			c.Redirect(http.StatusFound, "/login")
+		}
+	}
+}
+
+// NewPostPage renders the new post form
+func NewPostPage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userVal, _ := c.Get("user")
+		user, _ := userVal.(*domain.User)
+		c.HTML(http.StatusOK, "new.html", gin.H{
+			"Title": "Create New Post",
+			"Year":  time.Now().Year(),
+			"User":  user,
+		})
+	}
+}
+
+// EditPostPage renders the edit post form
+func EditPostPage(s *store.Store) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		slug := c.Param("slug")
+		post, exists := s.GetBySlug(slug)
+		if !exists {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
+			return
+		}
+
+		userVal, _ := c.Get("user")
+		user, _ := userVal.(*domain.User)
+		c.HTML(http.StatusOK, "edit.html", gin.H{
+			"Title": "Edit Post",
+			"Year":  time.Now().Year(),
+			"Post":  post,
+			"User":  user,
+		})
 	}
 }

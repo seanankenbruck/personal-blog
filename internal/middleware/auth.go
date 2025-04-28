@@ -1,57 +1,112 @@
 package middleware
 
 import (
-    "net/http"
-    "time"
+	"net/http"
+	"strings"
+	"time"
 
-    "github.com/gin-gonic/gin"
-    "github.com/seanankenbruck/blog/internal/domain"
-    "github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+	"github.com/seanankenbruck/blog/internal/auth"
+	"github.com/seanankenbruck/blog/internal/domain"
 )
 
-// AuthMiddleware populates a User from session if it exists
+// AuthMiddleware extracts and validates the JWT token
 func AuthMiddleware() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        // Try to get user info from session
-        session := sessions.Default(c)
-        username := session.Get("username")
-        role := session.Get("role")
+	return func(c *gin.Context) {
+		var tokenString string
 
-        // If no session exists, user is not logged in
-        if username == nil || role == nil {
-            c.Set("user", nil)
-            c.Next()
-            return
-        }
+		// First check Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				tokenString = parts[1]
+			}
+		}
 
-        // Create user from session data
-        user := &domain.User{
-            Username: username.(string),
-            Role:     domain.Role(role.(string)),
-        }
-        c.Set("user", user)
-        c.Next()
-    }
+		// If no token in header, check cookie
+		if tokenString == "" {
+			cookie, err := c.Cookie("jwt")
+			if err == nil {
+				tokenString = cookie
+			}
+		}
+
+		// If no token found anywhere, continue
+		if tokenString == "" {
+			c.Next()
+			return
+		}
+
+		// Validate the token
+		claims, err := auth.ValidateToken(tokenString)
+		if err != nil {
+			respondWithError(c, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		// Store claims in context for later use
+		c.Set("claims", claims)
+
+		// Also set user in context for templates
+		c.Set("user", &domain.User{
+			Username: claims.Username,
+			Role:     claims.Role,
+		})
+
+		c.Next()
+	}
 }
 
-// RequireEditor redirects to login if not logged in as editor
+// RequireEditor ensures the user has editor role
 func RequireEditor() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        user, exists := c.Get("user")
-        if !exists || user == nil {
-            c.Redirect(http.StatusFound, "/login")
-            c.Abort()
-            return
-        }
+	return func(c *gin.Context) {
+		claims, exists := c.Get("claims")
+		if !exists {
+			// If Accept header is application/json, return JSON response
+			if c.GetHeader("Accept") == "application/json" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+			} else {
+				// Otherwise redirect to login page
+				c.Redirect(http.StatusFound, "/login")
+			}
+			c.Abort()
+			return
+		}
 
-        if u, ok := user.(*domain.User); !ok || u.Role != domain.Editor {
-            c.HTML(http.StatusForbidden, "403.html", gin.H{
-                "Title": "Forbidden",
-                "Year":  time.Now().Year(),
-            })
-            c.Abort()
-            return
-        }
-        c.Next()
-    }
+		userClaims, ok := claims.(*auth.Claims)
+		if !ok || !auth.RequireRole(userClaims, domain.Editor) {
+			// If Accept header is application/json, return JSON response
+			if c.GetHeader("Accept") == "application/json" {
+				c.JSON(http.StatusForbidden, gin.H{"error": "editor access required"})
+			} else {
+				// Otherwise render the 403 page
+				c.HTML(http.StatusForbidden, "403.html", gin.H{
+					"Title": "Forbidden",
+					"Year":  time.Now().Year(),
+				})
+			}
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// Helper function to handle error responses
+func respondWithError(c *gin.Context, status int, message string) {
+	if c.GetHeader("Accept") == "application/json" {
+		c.JSON(status, gin.H{"error": message})
+	} else {
+		if status == http.StatusUnauthorized {
+			c.Redirect(http.StatusFound, "/login")
+		} else {
+			c.HTML(status, "403.html", gin.H{
+				"Title": "Forbidden",
+				"Year":  time.Now().Year(),
+			})
+		}
+	}
+	c.Abort()
 }

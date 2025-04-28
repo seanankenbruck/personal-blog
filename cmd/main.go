@@ -2,12 +2,9 @@ package main
 
 import (
 	"html/template"
-	"log"
 	"net/http"
-	"time"
+	"os"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
@@ -18,46 +15,30 @@ import (
 )
 
 func main() {
-	// Initialize the stores
-	s := store.NewStore()
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
+
+	// Initialize stores
+	postStore := store.NewStore()
 	userStore := store.NewUserStore()
 
 	// Add some test posts
-	s.Create(store.Post{
+	postStore.Create(store.Post{
 		Title:   "Welcome to My Blog",
 		Content: "This is my first blog post. More content coming soon!",
 		Author:  "Admin",
 		Slug:    "welcome-to-my-blog",
 	})
 
-	s.Create(store.Post{
+	postStore.Create(store.Post{
 		Title:   "Getting Started with Go",
 		Content: "Go is a powerful programming language that makes it easy to build simple, reliable, and efficient software.",
 		Author:  "Admin",
 		Slug:    "getting-started-with-go",
 	})
 
-	// Create a new Gin router
-	r := gin.Default()
-
-	// Set up session store first
-	store := cookie.NewStore([]byte("super-secret-key"))
-	store.Options(sessions.Options{
-		Path:     "/",
-		MaxAge:   86400 * 7, // 7 days
-		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
-	})
-	r.Use(sessions.Sessions("session", store))
-
-	// Then apply authentication middleware
-	r.Use(middleware.AuthMiddleware())
-
-	// serve static files
-	r.Static("/static", "./static")
-
-	// Set up template engine with markdown function
-	r.SetFuncMap(template.FuncMap{
+	// Set up template engine with custom functions
+	r.SetFuncMap(map[string]interface{}{
 		"safeHTML": func(text string) template.HTML {
 			extensions := parser.CommonExtensions | parser.AutoHeadingIDs
 			p := parser.NewWithExtensions(extensions)
@@ -69,8 +50,11 @@ func main() {
 		},
 	})
 
-	// Load HTML templates
+	// Load templates
 	r.LoadHTMLGlob("templates/*.html")
+
+	// Static files
+	r.Static("/static", "./static")
 
 	// Add preview endpoint
 	r.POST("/preview", func(c *gin.Context) {
@@ -98,49 +82,37 @@ func main() {
 		c.String(http.StatusOK, string(html))
 	})
 
-	// Register routes
-	r.GET("/", handler.HomePage(s))
-	r.GET("/portfolio", handler.PortfolioPage())
-	r.GET("/contact", handler.ContactPage())
-	r.POST("/contact", handler.SubmitContact())
-	r.GET("/posts", handler.GetPosts(s))
-	r.GET("/posts/new", middleware.RequireEditor(), func(c *gin.Context) {
-		c.HTML(http.StatusOK, "new.html", gin.H{
-			"Title": "Create New Post",
-			"Year": time.Now().Year(),
-		})
-	})
-	r.POST("/posts", middleware.RequireEditor(), handler.CreatePost(s))
-	r.GET("/posts/:slug", handler.GetPost(s))
-	r.GET("/posts/:slug/edit", middleware.RequireEditor(), func(c *gin.Context) {
-		slug := c.Param("slug")
-		post, exists := s.GetBySlug(slug)
-		if !exists {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
-			return
-		}
-		c.HTML(http.StatusOK, "edit.html", gin.H{
-			"Title": "Edit Post",
-			"Year": time.Now().Year(),
-			"Post": post,
-		})
-	})
-	r.PUT("/posts/:slug", middleware.RequireEditor(), handler.UpdatePost(s))
-	r.DELETE("/posts/:slug", middleware.RequireEditor(), handler.DeletePost(s))
+	// Auth routes (before middleware)
 	r.GET("/login", handler.LoginPage())
 	r.POST("/login", handler.Login(userStore))
 	r.GET("/logout", handler.Logout())
 
-	// Start the server
-	srv := &http.Server{
-		Addr:         ":8080",
-		Handler:      r,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+	// Apply authentication middleware
+	r.Use(middleware.AuthMiddleware())
+
+	// Public routes
+	r.GET("/", handler.HomePage(postStore))
+	r.GET("/about", handler.AboutPage())
+	r.GET("/portfolio", handler.PortfolioPage())
+	r.GET("/contact", handler.ContactPage())
+	r.GET("/posts", handler.GetPosts(postStore))
+	r.GET("/posts/:slug", handler.GetPost(postStore))
+
+	// Protected routes
+	authorized := r.Group("/")
+	authorized.Use(middleware.RequireEditor())
+	{
+		authorized.GET("/posts/new", handler.NewPostPage())
+		authorized.POST("/posts", handler.CreatePost(postStore))
+		authorized.GET("/posts/:slug/edit", handler.EditPostPage(postStore))
+		authorized.PUT("/posts/:slug", handler.UpdatePost(postStore))
+		authorized.DELETE("/posts/:slug", handler.DeletePost(postStore))
 	}
 
-	log.Printf("Server starting on %s", srv.Addr)
-	if err := srv.ListenAndServe(); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+	// Start server
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
+	r.Run(":" + port)
 }
