@@ -10,15 +10,17 @@
     <div class="post">
         <h1 class="post-title">{{.Post.Title}}</h1>
         <div class="post-meta">
-            By {{.Post.Author}} • {{.Post.CreatedAt.Format "January 2, 2006"}}
+            Posted on {{.Post.CreatedAt.Format "January 2, 2006"}}
         </div>
-        <div class="post-content">
-            {{safeHTML .Post.Content}}
+        <div class="prose max-w-none">
+            {{ .Post.Content | safeHTML }}
         </div>
+        {{if .User}}
         <div class="post-actions">
             <a href="/posts/{{.Post.Slug}}/edit" class="btn">Edit Post</a>
             <button onclick="deletePost('{{.Post.Slug}}')" class="btn btn-danger">Delete Post</button>
         </div>
+        {{end}}
     </div>
 
     <script>

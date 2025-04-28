@@ -28,11 +28,6 @@
                 </div>
             </div>
         </div>
-        <div>
-            <label for="author" class="block text-sm font-medium text-gray-700">Author</label>
-            <input type="text" id="author" name="author" required
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-        </div>
         <button type="submit"
             class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             Create Post
@@ -40,27 +35,33 @@
     </form>
 
     <script>
-    function updatePreview() {
-        const content = document.getElementById('content').value;
-        fetch('/preview', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ content }),
-        })
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('preview').innerHTML = html;
-        });
-    }
+    let previewTimeout;
+    const preview = document.getElementById('preview');
+    const content = document.getElementById('content');
+
+    content.addEventListener('input', function() {
+        clearTimeout(previewTimeout);
+        previewTimeout = setTimeout(() => {
+            fetch('/preview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: this.value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                preview.innerHTML = data.html;
+            })
+            .catch(error => console.error('Error:', error));
+        }, 300); // Wait 300ms after typing stops before sending request
+    });
 
     document.getElementById('postForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = {
             title: document.getElementById('title').value,
-            content: document.getElementById('content').value,
-            author: document.getElementById('author').value
+            content: document.getElementById('content').value
         };
 
         fetch('/posts', {

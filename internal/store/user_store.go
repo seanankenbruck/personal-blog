@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"github.com/seanankenbruck/blog/internal/domain"
 )
 
@@ -29,16 +30,35 @@ func NewUserStore() *UserStore {
 	return store
 }
 
-func (s *UserStore) Authenticate(username, password string) (*domain.User, bool) {
+var (
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrUserExists        = errors.New("user already exists")
+)
+
+func (s *UserStore) Authenticate(username, password string) (*domain.User, error) {
 	user, exists := s.users[username]
 	if !exists {
-		return nil, false
+		return nil, ErrInvalidCredentials
 	}
 
 	// In a real app, you would hash the password and compare hashes
 	if user.Password != password {
-		return nil, false
+		return nil, ErrInvalidCredentials
 	}
 
-	return user, true
+	return user, nil
+}
+
+func (s *UserStore) Create(username, password string, role domain.Role) error {
+	if _, exists := s.users[username]; exists {
+		return ErrUserExists
+	}
+
+	s.users[username] = &domain.User{
+		Username: username,
+		Password: password, // In a real app, this would be hashed
+		Role:     role,
+	}
+
+	return nil
 }

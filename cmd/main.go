@@ -1,118 +1,92 @@
 package main
 
 import (
-	"html/template"
-	"net/http"
-	"os"
+	"context"
+	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
-	"github.com/gomarkdown/markdown/parser"
+	"github.com/seanankenbruck/blog/internal/db"
 	"github.com/seanankenbruck/blog/internal/handler"
 	"github.com/seanankenbruck/blog/internal/middleware"
-	"github.com/seanankenbruck/blog/internal/store"
+	"github.com/seanankenbruck/blog/internal/repository"
+	"github.com/seanankenbruck/blog/internal/service"
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
+	// Initialize router
 	r := gin.Default()
 
-	// Initialize stores
-	postStore := store.NewStore()
-	userStore := store.NewUserStore()
-
-	// Add some test posts
-	postStore.Create(store.Post{
-		Title:   "Welcome to My Blog",
-		Content: "This is my first blog post. More content coming soon!",
-		Author:  "Admin",
-		Slug:    "welcome-to-my-blog",
-	})
-
-	postStore.Create(store.Post{
-		Title:   "Getting Started with Go",
-		Content: "Go is a powerful programming language that makes it easy to build simple, reliable, and efficient software.",
-		Author:  "Admin",
-		Slug:    "getting-started-with-go",
-	})
-
-	// Set up template engine with custom functions
-	r.SetFuncMap(map[string]interface{}{
-		"safeHTML": func(text string) template.HTML {
-			extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-			p := parser.NewWithExtensions(extensions)
-			htmlFlags := html.CommonFlags | html.HrefTargetBlank
-			opts := html.RendererOptions{Flags: htmlFlags}
-			renderer := html.NewRenderer(opts)
-			doc := p.Parse([]byte(text))
-			return template.HTML(markdown.Render(doc, renderer))
-		},
-	})
-
-	// Load templates
-	r.LoadHTMLGlob("templates/*.html")
-
-	// Static files
+	// Set up static file serving
 	r.Static("/static", "./static")
 
-	// Add preview endpoint
-	r.POST("/preview", func(c *gin.Context) {
-		var req struct {
-			Content string `json:"content"`
-		}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
+	// Set up templates
+	if err := handler.SetupTemplates(r); err != nil {
+		log.Fatalf("Failed to set up templates: %v", err)
+	}
 
-		// Create a new parser with common extensions
-		extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-		p := parser.NewWithExtensions(extensions)
+	// Initialize database connection
+	if err := db.Init(); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
 
-		// Create HTML renderer with common extensions
-		htmlFlags := html.CommonFlags | html.HrefTargetBlank
-		opts := html.RendererOptions{Flags: htmlFlags}
-		renderer := html.NewRenderer(opts)
+	// Initialize repositories
+	postRepo := repository.NewPostgresPostRepository(db.DB)
+	userRepo := repository.NewMemoryUserRepository()
 
-		// Convert markdown to HTML
-		doc := p.Parse([]byte(req.Content))
-		html := markdown.Render(doc, renderer)
+	// Initialize services
+	postService := service.NewPostService(postRepo)
+	userService := service.NewUserService(userRepo)
 
-		c.String(http.StatusOK, string(html))
+	// Initialize handlers
+	postHandler := handler.NewPostHandler(postService)
+	userHandler := handler.NewUserHandler(userService)
+
+	// Set up routes
+	setupRoutes(r, postHandler, userHandler)
+
+	// Start server
+	if err := r.Run(":8080"); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *handler.UserHandler) {
+	// Add context timeout middleware
+	r.Use(func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+		defer cancel()
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
 	})
-
-	// Auth routes (before middleware)
-	r.GET("/login", handler.LoginPage())
-	r.POST("/login", handler.Login(userStore))
-	r.GET("/logout", handler.Logout())
 
 	// Apply authentication middleware
 	r.Use(middleware.AuthMiddleware())
 
 	// Public routes
-	r.GET("/", handler.HomePage(postStore))
-	r.GET("/about", handler.AboutPage())
-	r.GET("/portfolio", handler.PortfolioPage())
-	r.GET("/contact", handler.ContactPage())
-	r.GET("/posts", handler.GetPosts(postStore))
-	r.GET("/posts/:slug", handler.GetPost(postStore))
+	public := r.Group("/")
+	{
+		public.GET("/", postHandler.HomePage)
+		public.GET("/posts", postHandler.GetPosts)
+		public.GET("/posts/:slug", postHandler.GetPost)
+		public.GET("/about", handler.AboutPage())
+		public.GET("/portfolio", handler.PortfolioPage())
+		public.GET("/contact", handler.ContactPage())
+		public.POST("/contact", handler.SubmitContact())
+		public.GET("/login", handler.LoginPage())
+		public.POST("/login", userHandler.Login)
+		public.GET("/logout", handler.Logout())
+		public.POST("/preview", handler.PreviewMarkdown())
+	}
 
 	// Protected routes
-	authorized := r.Group("/")
-	authorized.Use(middleware.RequireEditor())
+	editor := r.Group("/")
+	editor.Use(middleware.RequireEditor())
 	{
-		authorized.GET("/posts/new", handler.NewPostPage())
-		authorized.POST("/posts", handler.CreatePost(postStore))
-		authorized.GET("/posts/:slug/edit", handler.EditPostPage(postStore))
-		authorized.PUT("/posts/:slug", handler.UpdatePost(postStore))
-		authorized.DELETE("/posts/:slug", handler.DeletePost(postStore))
+		editor.GET("/posts/new", postHandler.NewPostPage)
+		editor.POST("/posts", postHandler.CreatePost)
+		editor.GET("/posts/:slug/edit", postHandler.EditPostPage)
+		editor.PUT("/posts/:slug", postHandler.UpdatePost)
+		editor.DELETE("/posts/:slug", postHandler.DeletePost)
 	}
-
-	// Start server
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	r.Run(":" + port)
 }

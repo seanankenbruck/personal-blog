@@ -3,6 +3,7 @@ package domain
 import (
 	"testing"
 	"time"
+	"gorm.io/gorm"
 )
 
 func TestPost_Validate(t *testing.T) {
@@ -16,7 +17,6 @@ func TestPost_Validate(t *testing.T) {
 			post: &Post{
 				Title:   "Test Post",
 				Content: "This is a test post",
-				Author:  "Test Author",
 			},
 			wantErr: false,
 		},
@@ -25,7 +25,6 @@ func TestPost_Validate(t *testing.T) {
 			post: &Post{
 				Title:   "",
 				Content: "This is a test post",
-				Author:  "Test Author",
 			},
 			wantErr: true,
 		},
@@ -34,16 +33,6 @@ func TestPost_Validate(t *testing.T) {
 			post: &Post{
 				Title:   "Test Post",
 				Content: "",
-				Author:  "Test Author",
-			},
-			wantErr: true,
-		},
-		{
-			name: "empty author",
-			post: &Post{
-				Title:   "Test Post",
-				Content: "This is a test post",
-				Author:  "",
 			},
 			wantErr: true,
 		},
@@ -62,18 +51,18 @@ func TestPost_Validate(t *testing.T) {
 func TestPost_Update(t *testing.T) {
 	now := time.Now()
 	post := &Post{
-		ID:        1,
+		Model: gorm.Model{
+			ID:        1,
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
 		Title:     "Original Title",
 		Content:   "Original Content",
-		Author:    "Original Author",
-		CreatedAt: now,
-		UpdatedAt: now,
 	}
 
 	newPost := &Post{
 		Title:   "New Title",
 		Content: "New Content",
-		Author:  "New Author",
 	}
 
 	post.Update(newPost)
@@ -83,9 +72,6 @@ func TestPost_Update(t *testing.T) {
 	}
 	if post.Content != newPost.Content {
 		t.Errorf("Expected content %v, got %v", newPost.Content, post.Content)
-	}
-	if post.Author != newPost.Author {
-		t.Errorf("Expected author %v, got %v", newPost.Author, post.Author)
 	}
 	if post.UpdatedAt == now {
 		t.Error("UpdatedAt should have changed")

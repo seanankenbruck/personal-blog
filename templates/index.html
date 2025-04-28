@@ -25,10 +25,12 @@
         <div class="post">
             <h2 class="post-title">{{.Title}}</h2>
             <div class="post-meta">
-                By {{.Author}} • {{.CreatedAt.Format "January 2, 2006"}}
+                Posted on {{.CreatedAt.Format "January 2, 2006"}}
             </div>
             <div class="post-content">
-                {{.Content}}
+                <div class="prose max-w-none">
+                    {{ .Content }}
+                </div>
             </div>
             <div>
                 <a href="/posts/{{.Slug}}" class="btn">Read More</a>

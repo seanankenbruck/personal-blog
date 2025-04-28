@@ -34,6 +34,34 @@ A modern, test-driven personal blog built with Go, featuring OpenTelemetry instr
    go run cmd/main.go
    ```
 
+## Database
+
+This application uses PostgreSQL via [GORM](https://gorm.io/) for data persistence. The schema is automatically migrated on startup.
+
+1. Configure your database connection in `.env`:
+   ```
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_USER=postgres
+   DB_PASSWORD=postgres
+   DB_NAME=blog
+   DB_SSLMODE=disable
+   ```
+2. To apply (auto) migrations, start the application:
+   ```bash
+   go run cmd/main.go
+   ```
+3. To add a new domain model:
+   - Define a struct in `internal/domain/<model>.go` with appropriate GORM tags.
+   - Register it in the `AutoMigrate(&domain.NewModel{})` call in `internal/db/db.go`.
+   - Restart the application to apply the new migration.
+4. Connect to database from command line
+   ```bash
+   export PGPASSWORD=postgres
+   psql -h localhost -U postgres -d postgres
+   \l
+   ```
+
 ## Testing
 
 Run the test suite:
