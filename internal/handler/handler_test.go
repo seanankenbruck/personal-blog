@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	 "sync"
+	"sync"
 	"testing"
 	"time"
 
@@ -26,6 +26,7 @@ import (
 	"github.com/seanankenbruck/blog/internal/middleware"
 	"github.com/seanankenbruck/blog/internal/auth"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/stretchr/testify/assert"
 )
 
 var testRouter *gin.Engine
@@ -71,6 +72,12 @@ func TestMain(m *testing.M) {
 		c.Next()
 	})
 
+	// Set up routes for global test router
+	log.Println("Setting up routes...")
+	repo := repository.NewMemoryPostRepository()
+	svc := service.NewPostService(repo)
+	testRouter.GET("/posts", GetPosts(svc))
+
 	log.Println("Router setup complete")
 	m.Run()
 }
@@ -113,12 +120,6 @@ func setupRouter() *gin.Engine {
 	})
 
 	return router
-}
-
-// getAuthToken is a helper function to generate JWT tokens for testing
-func getAuthToken(username string, role domain.Role) string {
-	token, _ := auth.GenerateToken(username, role)
-	return token
 }
 
 // getGinContext is a helper function to create a Gin context for testing
@@ -201,7 +202,7 @@ func TestCreatePost(t *testing.T) {
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	log.Printf("Making request to %s with editor token", req.URL.String())
 	router.ServeHTTP(w, req)
 
@@ -400,7 +401,7 @@ func TestDeletePost(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/posts/"+post.Slug, nil)
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	log.Printf("Making request to %s", req.URL.String())
 	router.ServeHTTP(w, req)
 
@@ -425,7 +426,7 @@ func TestCreatePostForbidden(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("reader", domain.Reader))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("reader", domain.Reader))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
@@ -450,7 +451,7 @@ func TestUpdatePostForbidden(t *testing.T) {
 	req, _ := http.NewRequest("PUT", "/posts/old", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("reader", domain.Reader))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("reader", domain.Reader))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
@@ -471,7 +472,7 @@ func TestDeletePostForbidden(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/posts/old", nil)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("reader", domain.Reader))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("reader", domain.Reader))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
@@ -488,7 +489,7 @@ func TestNewPageForbidden(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/posts/new", nil)
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("reader", domain.Reader))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("reader", domain.Reader))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
@@ -505,7 +506,7 @@ func TestEditPageForbidden(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/posts/test/edit", nil)
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("reader", domain.Reader))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("reader", domain.Reader))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusForbidden {
@@ -576,7 +577,7 @@ func TestDuplicateSlug(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData1))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusCreated {
@@ -593,7 +594,7 @@ func TestDuplicateSlug(t *testing.T) {
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData2))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusCreated {
@@ -633,7 +634,7 @@ func TestConcurrentPosts(t *testing.T) {
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
 			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+			req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 			router.ServeHTTP(w, req)
 
 			if w.Code == http.StatusCreated {
@@ -734,7 +735,7 @@ func TestInvalidJSON(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusBadRequest {
@@ -758,7 +759,7 @@ func TestMissingFields(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusBadRequest {
@@ -774,7 +775,7 @@ func TestMissingFields(t *testing.T) {
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusBadRequest {
@@ -799,7 +800,7 @@ func TestSQLInjection(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusCreated {
@@ -834,7 +835,7 @@ func TestXSS(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusCreated {
@@ -869,7 +870,7 @@ func TestCSRF(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusCreated {
@@ -880,11 +881,23 @@ func TestCSRF(t *testing.T) {
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
 	req.Header.Set("X-CSRF-Token", "invalid-token")
 	router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusCreated {
 		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
 	}
+}
+
+func TestGetPostsUnauthenticated(t *testing.T) {
+	// Create request
+	req := httptest.NewRequest("GET", "/posts", nil)
+	w := httptest.NewRecorder()
+
+	// Execute request
+	testRouter.ServeHTTP(w, req)
+
+	// Check response
+	assert.Equal(t, http.StatusOK, w.Code)
 }

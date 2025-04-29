@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Markdown Preview</title>
+    <style>
+        .editor-container {
+            display: flex;
+            gap: 20px;
+        }
+        .editor, .preview {
+            flex: 1;
+            min-height: 500px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        .preview {
+            overflow-y: auto;
+        }
+        .upload-btn {
+            margin: 10px 0;
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="editor">
+            <textarea id="markdown" name="markdown" rows="20" cols="50">{{.Content}}</textarea>
+            <input type="file" id="image" name="image" accept="image/*" style="display: none">
+            <button class="upload-btn" onclick="document.getElementById('image').click()">Upload Image</button>
+        </div>
+        <div class="preview" id="preview"></div>
+    </div>
+
+    <script>
+        const markdown = document.getElementById('markdown');
+        const preview = document.getElementById('preview');
+        const imageInput = document.getElementById('image');
+
+        // Handle image upload
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                // Insert markdown image syntax at cursor position
+                const cursorPos = markdown.selectionStart;
+                const text = markdown.value;
+                const imageMarkdown = `![${file.name}](${data.url})`;
+                markdown.value = text.slice(0, cursorPos) + imageMarkdown + text.slice(cursorPos);
+
+                // Update preview
+                updatePreview();
+            } catch (error) {
+                console.error('Error uploading image:', error);
+            }
+        });
+
+        // Update preview on markdown change
+        markdown.addEventListener('input', updatePreview);
+
+        function updatePreview() {
+            fetch('/preview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `markdown=${encodeURIComponent(markdown.value)}`
+            })
+            .then(response => response.text())
+            .then(html => {
+                preview.innerHTML = html;
+            });
+        }
+
+        // Initial preview
+        updatePreview();
+    </script>
+</body>
+</html>

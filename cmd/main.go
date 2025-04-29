@@ -76,7 +76,7 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 		public.GET("/login", handler.LoginPage())
 		public.POST("/login", userHandler.Login)
 		public.GET("/logout", handler.Logout())
-		public.POST("/preview", handler.PreviewMarkdown())
+		public.POST("/preview", postHandler.PreviewMarkdown())
 	}
 
 	// Protected routes
@@ -88,5 +88,6 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 		editor.GET("/posts/:slug/edit", postHandler.EditPostPage)
 		editor.PUT("/posts/:slug", postHandler.UpdatePost)
 		editor.DELETE("/posts/:slug", postHandler.DeletePost)
+		editor.POST("/upload", postHandler.UploadImage)
 	}
 }

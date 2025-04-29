@@ -19,6 +19,9 @@ import (
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
+	"fmt"
+	"os"
+	"io"
 )
 
 // SetupTemplates configures the template engine with custom functions
@@ -393,35 +396,34 @@ func EditPostPage(svc domain.PostService) gin.HandlerFunc {
 	}
 }
 
-// PreviewMarkdown handles markdown preview requests
-func PreviewMarkdown() gin.HandlerFunc {
+// PreviewMarkdown returns a handler function that renders markdown to HTML
+func (h *PostHandler) PreviewMarkdown() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req struct {
-			Content string `json:"content"`
-		}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		// Read the markdown from the request body
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
 			return
 		}
 
-		// Create a new parser with common extensions
-		extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+		// Create a markdown parser with extensions
+		extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.SuperSubscript
 		p := parser.NewWithExtensions(extensions)
 
-		// Parse the markdown content
-		doc := p.Parse([]byte(req.Content))
+		// Parse the markdown
+		doc := p.Parse(body)
 
-		// Create HTML renderer with common flags
+		// Create a renderer with HTML options
 		htmlFlags := html.CommonFlags | html.HrefTargetBlank
 		opts := html.RendererOptions{Flags: htmlFlags}
 		renderer := html.NewRenderer(opts)
 
-		// Render the markdown to HTML
+		// Render to HTML
 		html := markdown.Render(doc, renderer)
 
-		// Return the HTML as a raw string
-		c.Header("Content-Type", "application/json")
-		c.JSON(http.StatusOK, gin.H{"html": template.HTML(html)})
+		// Set the content type and return the HTML
+		c.Header("Content-Type", "text/html")
+		c.String(http.StatusOK, string(html))
 	}
 }
 
@@ -467,6 +469,52 @@ func (h *PostHandler) DeletePost(c *gin.Context) {
 	DeletePost(h.postService)(c)
 }
 
+// UploadImage handles image upload requests
+func (h *PostHandler) UploadImage(c *gin.Context) {
+	// Get the file from the request
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No image file provided"})
+		return
+	}
+
+	// Validate file type
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/png":  true,
+		"image/gif":  true,
+	}
+
+	fileType := file.Header.Get("Content-Type")
+	if !allowedTypes[fileType] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file type. Only JPEG, PNG, and GIF are allowed"})
+		return
+	}
+
+	// Create uploads directory if it doesn't exist
+	uploadDir := "static/uploads"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
+		return
+	}
+
+	// Generate unique filename
+	ext := filepath.Ext(file.Filename)
+	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+	filepath := filepath.Join(uploadDir, filename)
+
+	// Save the file
+	if err := c.SaveUploadedFile(file, filepath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+		return
+	}
+
+	// Return the URL
+	c.JSON(http.StatusOK, gin.H{
+		"url": fmt.Sprintf("/static/uploads/%s", filename),
+	})
+}
+
 // UserHandler handles user-related HTTP requests
 type UserHandler struct {
 	userService domain.UserService
@@ -506,4 +554,30 @@ func (h *UserHandler) Login(c *gin.Context) {
 	// Set the token in a cookie for browser clients
 	c.SetCookie("jwt", token, 86400, "/", "", false, true)
 	c.Redirect(http.StatusFound, "/")
+}
+
+// UploadImage handles image uploads for blog posts
+func UploadImage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get the file from the request
+		file, err := c.FormFile("image")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No image file provided"})
+			return
+		}
+
+		// Generate a unique filename
+		filename := fmt.Sprintf("%d-%s", time.Now().UnixNano(), file.Filename)
+		filepath := filepath.Join("static", "images", filename)
+
+		// Save the file
+		if err := c.SaveUploadedFile(file, filepath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
+			return
+		}
+
+		// Return the URL of the saved image
+		imageURL := fmt.Sprintf("/static/images/%s", filename)
+		c.JSON(http.StatusOK, gin.H{"url": imageURL})
+	}
 }
