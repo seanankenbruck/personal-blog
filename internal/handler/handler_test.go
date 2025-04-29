@@ -25,6 +25,7 @@ import (
 	"github.com/seanankenbruck/blog/internal/service"
 	"github.com/seanankenbruck/blog/internal/middleware"
 	"github.com/seanankenbruck/blog/internal/auth"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var testRouter *gin.Engine
@@ -512,88 +513,100 @@ func TestEditPageForbidden(t *testing.T) {
 	}
 }
 
-// // TestJWTExpiration tests handling of expired tokens
-// func TestJWTExpiration(t *testing.T) {
-// 	router := setupRouter()
-// 	router.GET("/posts", middleware.RequireEditor(), GetPosts(nil))
+// TestJWTExpiration tests handling of expired tokens
+func TestJWTExpiration(t *testing.T) {
+	repo := repository.NewMemoryPostRepository()
+	svc := service.NewPostService(repo)
 
-// 	// Create an expired token
-// 	expiredToken := getAuthToken("editor", domain.Editor)
-// 	// TODO: Modify token to be expired
+	router := setupRouter()
+	router.GET("/posts", middleware.RequireEditor(), GetPosts(svc))
 
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("GET", "/posts", nil)
-// 	req.Header.Set("Authorization", "Bearer "+expiredToken)
-// 	router.ServeHTTP(w, req)
+	// Create an expired token by setting expiration time to the past
+	expirationTime := time.Now().Add(-1 * time.Hour) // Set expiration to 1 hour ago
+	claims := &auth.Claims{
+		Username: "editor",
+		Role:     domain.Editor,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now().Add(-2 * time.Hour)), // Set issued at to 2 hours ago
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	expiredToken, _ := token.SignedString([]byte("your-secret-key"))
 
-// 	if w.Code != http.StatusUnauthorized {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
-// 	}
-// }
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/posts", nil)
+	req.Header.Set("Authorization", "Bearer "+expiredToken)
+	router.ServeHTTP(w, req)
 
-// // TestInvalidToken tests handling of malformed tokens
-// func TestInvalidToken(t *testing.T) {
-// 	router := setupRouter()
-// 	router.GET("/posts", middleware.RequireEditor(), GetPosts(nil))
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
+	}
+}
 
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("GET", "/posts", nil)
-// 	req.Header.Set("Authorization", "Bearer invalid-token")
-// 	router.ServeHTTP(w, req)
+// TestInvalidToken tests handling of malformed tokens
+func TestInvalidToken(t *testing.T) {
+	router := setupRouter()
+	router.GET("/posts", middleware.RequireEditor(), GetPosts(nil))
 
-// 	if w.Code != http.StatusUnauthorized {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
-// 	}
-// }
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/posts", nil)
+	req.Header.Set("Authorization", "Bearer invalid-token")
+	router.ServeHTTP(w, req)
 
-// // TestDuplicateSlug tests handling of duplicate post slugs
-// func TestDuplicateSlug(t *testing.T) {
-// 	repo := repository.NewMemoryPostRepository()
-// 	svc := service.NewPostService(repo)
-// 	router := setupRouter()
-// 	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status code %d, got %d", http.StatusUnauthorized, w.Code)
+	}
+}
 
-// 	// Create first post
-// 	post1 := &domain.Post{
-// 		Title:   "Test Post",
-// 		Content: "Test Content",
-// 	}
-// 	jsonData1, _ := json.Marshal(post1)
+// TestDuplicateSlug tests handling of duplicate post slugs
+func TestDuplicateSlug(t *testing.T) {
+	repo := repository.NewMemoryPostRepository()
+	svc := service.NewPostService(repo)
+	router := setupRouter()
+	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
 
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData1))
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 	router.ServeHTTP(w, req)
+	// Create first post
+	post1 := &domain.Post{
+		Title:   "Test Post",
+		Content: "Test Content",
+	}
+	jsonData1, _ := json.Marshal(post1)
 
-// 	if w.Code != http.StatusCreated {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
-// 	}
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData1))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	router.ServeHTTP(w, req)
 
-// 	// Try to create post with same title (should generate same slug)
-// 	post2 := &domain.Post{
-// 		Title:   "Test Post", // Same title
-// 		Content: "Different Content",
-// 	}
-// 	jsonData2, _ := json.Marshal(post2)
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
+	}
 
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData2))
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 	router.ServeHTTP(w, req)
+	// Try to create post with same title (should generate same slug)
+	post2 := &domain.Post{
+		Title:   "Test Post", // Same title
+		Content: "Different Content",
+	}
+	jsonData2, _ := json.Marshal(post2)
 
-// 	if w.Code != http.StatusCreated {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
-// 	}
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData2))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	router.ServeHTTP(w, req)
 
-// 	// Verify slugs are different
-// 	var response1, response2 domain.Post
-// 	json.NewDecoder(w.Body).Decode(&response2)
-// 	if response1.Slug == response2.Slug {
-// 		t.Errorf("Expected different slugs for posts with same title")
-// 	}
-// }
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
+	}
+
+	// Verify slugs are different
+	var response1, response2 domain.Post
+	json.NewDecoder(w.Body).Decode(&response2)
+	if response1.Slug == response2.Slug {
+		t.Errorf("Expected different slugs for posts with same title")
+	}
+}
 
 // // TestConcurrentPosts tests handling of concurrent post creation
 // func TestConcurrentPosts(t *testing.T) {
