@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	//"fmt"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	// "sync"
+	 "sync"
 	"testing"
 	"time"
 
@@ -608,305 +608,283 @@ func TestDuplicateSlug(t *testing.T) {
 	}
 }
 
-// // TestConcurrentPosts tests handling of concurrent post creation
-// func TestConcurrentPosts(t *testing.T) {
-// 	repo := repository.NewMemoryPostRepository()
-// 	svc := service.NewPostService(repo)
-// 	router := setupRouter()
-// 	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
+// TestConcurrentPosts tests handling of concurrent post creation
+func TestConcurrentPosts(t *testing.T) {
+	repo := repository.NewMemoryPostRepository()
+	svc := service.NewPostService(repo)
+	router := setupRouter()
+	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
 
-// 	// Create multiple posts concurrently
-// 	var wg sync.WaitGroup
-// 	posts := make([]*domain.Post, 10)
-// 	errors := make([]error, 10)
+	// Create multiple posts concurrently
+	var wg sync.WaitGroup
+	posts := make([]*domain.Post, 10)
+	errors := make([]error, 10)
 
-// 	for i := 0; i < 10; i++ {
-// 		wg.Add(1)
-// 		go func(index int) {
-// 			defer wg.Done()
-// 			post := &domain.Post{
-// 				Title:   fmt.Sprintf("Concurrent Post %d", index),
-// 				Content: fmt.Sprintf("Content %d", index),
-// 			}
-// 			jsonData, _ := json.Marshal(post)
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(index int) {
+			defer wg.Done()
+			post := &domain.Post{
+				Title:   fmt.Sprintf("Concurrent Post %d", index),
+				Content: fmt.Sprintf("Content %d", index),
+			}
+			jsonData, _ := json.Marshal(post)
 
-// 			w := httptest.NewRecorder()
-// 			req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
-// 			req.Header.Set("Content-Type", "application/json")
-// 			req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 			router.ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+			router.ServeHTTP(w, req)
 
-// 			if w.Code == http.StatusCreated {
-// 				json.NewDecoder(w.Body).Decode(&posts[index])
-// 			} else {
-// 				errors[index] = fmt.Errorf("failed to create post: %d", w.Code)
-// 			}
-// 		}(i)
-// 	}
+			if w.Code == http.StatusCreated {
+				json.NewDecoder(w.Body).Decode(&posts[index])
+			} else {
+				errors[index] = fmt.Errorf("failed to create post: %d", w.Code)
+			}
+		}(i)
+	}
 
-// 	wg.Wait()
+	wg.Wait()
 
-// 	// Verify all posts were created successfully
-// 	for i, err := range errors {
-// 		if err != nil {
-// 			t.Errorf("Error creating post %d: %v", i, err)
-// 		}
-// 	}
+	// Verify all posts were created successfully
+	for i, err := range errors {
+		if err != nil {
+			t.Errorf("Error creating post %d: %v", i, err)
+		}
+	}
 
-// 	// Verify all slugs are unique
-// 	slugs := make(map[string]bool)
-// 	for _, post := range posts {
-// 		if slugs[post.Slug] {
-// 			t.Errorf("Duplicate slug found: %s", post.Slug)
-// 		}
-// 		slugs[post.Slug] = true
-// 	}
-// }
+	// Verify all slugs are unique
+	slugs := make(map[string]bool)
+	for _, post := range posts {
+		if slugs[post.Slug] {
+			t.Errorf("Duplicate slug found: %s", post.Slug)
+		}
+		slugs[post.Slug] = true
+	}
+}
 
-// // TestDatabaseError tests handling of database connection errors
-// func TestDatabaseError(t *testing.T) {
-// 	// Create a mock repository that always returns an error
-// 	mockRepo := &MockPostRepository{
-// 		GetAllFunc: func(ctx context.Context) ([]*domain.Post, error) {
-// 			return nil, fmt.Errorf("database connection error")
-// 		},
-// 	}
-// 	svc := service.NewPostService(mockRepo)
-// 	router := setupRouter()
-// 	router.GET("/posts", GetPosts(svc))
+// MockPostRepository is a test stub implementing domain.PostRepository for error scenarios
+// It uses GetAllFunc to simulate database errors.
+type MockPostRepository struct {
+	GetAllFunc func(ctx context.Context) ([]*domain.Post, error)
+}
 
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("GET", "/posts", nil)
-// 	req.Header.Set("Accept", "application/json")
-// 	router.ServeHTTP(w, req)
+func (m *MockPostRepository) Create(ctx context.Context, post *domain.Post) error {
+	return nil
+}
 
-// 	if w.Code != http.StatusInternalServerError {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusInternalServerError, w.Code)
-// 	}
+func (m *MockPostRepository) GetByID(ctx context.Context, id uint) (*domain.Post, error) {
+	return nil, nil
+}
 
-// 	var response map[string]string
-// 	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
-// 		t.Errorf("Error decoding response: %v", err)
-// 	}
+func (m *MockPostRepository) GetBySlug(ctx context.Context, slug string) (*domain.Post, error) {
+	return nil, nil
+}
 
-// 	if response["error"] != "database connection error" {
-// 		t.Errorf("Expected error message 'database connection error', got '%s'", response["error"])
-// 	}
-// }
+func (m *MockPostRepository) GetAll(ctx context.Context) ([]*domain.Post, error) {
+	return m.GetAllFunc(ctx)
+}
 
-// // TestInvalidJSON tests handling of invalid JSON payloads
-// func TestInvalidJSON(t *testing.T) {
-// 	repo := repository.NewMemoryPostRepository()
-// 	svc := service.NewPostService(repo)
-// 	router := setupRouter()
-// 	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
+func (m *MockPostRepository) Update(ctx context.Context, post *domain.Post) error {
+	return nil
+}
 
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer([]byte("invalid json")))
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 	router.ServeHTTP(w, req)
+func (m *MockPostRepository) Delete(ctx context.Context, id uint) error {
+	return nil
+}
 
-// 	if w.Code != http.StatusBadRequest {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
-// 	}
-// }
+// TestDatabaseError tests handling of database connection errors
+func TestDatabaseError(t *testing.T) {
+	// Create a mock repository that always returns an error
+	mockRepo := &MockPostRepository{
+		GetAllFunc: func(ctx context.Context) ([]*domain.Post, error) {
+			return nil, fmt.Errorf("database connection error")
+		},
+	}
+	svc := service.NewPostService(mockRepo)
+	router := setupRouter()
+	router.GET("/posts", GetPosts(svc))
 
-// // TestMissingFields tests handling of missing required fields
-// func TestMissingFields(t *testing.T) {
-// 	repo := repository.NewMemoryPostRepository()
-// 	svc := service.NewPostService(repo)
-// 	router := setupRouter()
-// 	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/posts", nil)
+	req.Header.Set("Accept", "application/json")
+	router.ServeHTTP(w, req)
 
-// 	// Test missing title
-// 	post := &domain.Post{
-// 		Content: "Test Content",
-// 	}
-// 	jsonData, _ := json.Marshal(post)
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("Expected status code %d, got %d", http.StatusInternalServerError, w.Code)
+	}
 
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 	router.ServeHTTP(w, req)
+	var response map[string]string
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Errorf("Error decoding response: %v", err)
+	}
 
-// 	if w.Code != http.StatusBadRequest {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
-// 	}
+	if response["error"] != "database connection error" {
+		t.Errorf("Expected error message 'database connection error', got '%s'", response["error"])
+	}
+}
 
-// 	// Test missing content
-// 	post = &domain.Post{
-// 		Title: "Test Title",
-// 	}
-// 	jsonData, _ = json.Marshal(post)
+// TestInvalidJSON tests handling of invalid JSON payloads
+func TestInvalidJSON(t *testing.T) {
+	repo := repository.NewMemoryPostRepository()
+	svc := service.NewPostService(repo)
+	router := setupRouter()
+	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
 
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 	router.ServeHTTP(w, req)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer([]byte("invalid json")))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	router.ServeHTTP(w, req)
 
-// 	if w.Code != http.StatusBadRequest {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
-// 	}
-// }
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
+	}
+}
 
-// // TestSQLInjection tests protection against SQL injection attempts
-// func TestSQLInjection(t *testing.T) {
-// 	repo := repository.NewMemoryPostRepository()
-// 	svc := service.NewPostService(repo)
-// 	router := setupRouter()
-// 	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
+// TestMissingFields tests handling of missing required fields
+func TestMissingFields(t *testing.T) {
+	repo := repository.NewMemoryPostRepository()
+	svc := service.NewPostService(repo)
+	router := setupRouter()
+	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
 
-// 	// Test SQL injection in title
-// 	post := &domain.Post{
-// 		Title:   "'; DROP TABLE posts; --",
-// 		Content: "Test Content",
-// 	}
-// 	jsonData, _ := json.Marshal(post)
+	// Test missing title
+	post := &domain.Post{
+		Content: "Test Content",
+	}
+	jsonData, _ := json.Marshal(post)
 
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 	router.ServeHTTP(w, req)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	router.ServeHTTP(w, req)
 
-// 	if w.Code != http.StatusCreated {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
-// 	}
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
+	}
 
-// 	// Verify the title was properly escaped
-// 	var responsePost domain.Post
-// 	if err := json.NewDecoder(w.Body).Decode(&responsePost); err != nil {
-// 		t.Errorf("Error decoding response: %v", err)
-// 	}
+	// Test missing content
+	post = &domain.Post{
+		Title: "Test Title",
+	}
+	jsonData, _ = json.Marshal(post)
 
-// 	if responsePost.Title != post.Title {
-// 		t.Errorf("Expected title '%s', got '%s'", post.Title, responsePost.Title)
-// 	}
-// }
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	router.ServeHTTP(w, req)
 
-// // TestXSS tests protection against XSS attacks
-// func TestXSS(t *testing.T) {
-// 	repo := repository.NewMemoryPostRepository()
-// 	svc := service.NewPostService(repo)
-// 	router := setupRouter()
-// 	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
+	}
+}
 
-// 	// Test XSS in content
-// 	post := &domain.Post{
-// 		Title:   "Test Post",
-// 		Content: "<script>alert('xss')</script>",
-// 	}
-// 	jsonData, _ := json.Marshal(post)
+// TestSQLInjection tests protection against SQL injection attempts
+func TestSQLInjection(t *testing.T) {
+	repo := repository.NewMemoryPostRepository()
+	svc := service.NewPostService(repo)
+	router := setupRouter()
+	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
 
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 	router.ServeHTTP(w, req)
+	// Test SQL injection in title
+	post := &domain.Post{
+		Title:   "'; DROP TABLE posts; --",
+		Content: "Test Content",
+	}
+	jsonData, _ := json.Marshal(post)
 
-// 	if w.Code != http.StatusCreated {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
-// 	}
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	router.ServeHTTP(w, req)
 
-// 	// Verify the content was properly escaped
-// 	var responsePost domain.Post
-// 	if err := json.NewDecoder(w.Body).Decode(&responsePost); err != nil {
-// 		t.Errorf("Error decoding response: %v", err)
-// 	}
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
+	}
 
-// 	if responsePost.Content != post.Content {
-// 		t.Errorf("Expected content '%s', got '%s'", post.Content, responsePost.Content)
-// 	}
-// }
+	// Verify the title was properly escaped
+	var responsePost domain.Post
+	if err := json.NewDecoder(w.Body).Decode(&responsePost); err != nil {
+		t.Errorf("Error decoding response: %v", err)
+	}
 
-// // TestCSRF tests protection against CSRF attacks
-// func TestCSRF(t *testing.T) {
-// 	repo := repository.NewMemoryPostRepository()
-// 	svc := service.NewPostService(repo)
-// 	router := setupRouter()
-// 	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
+	if responsePost.Title != post.Title {
+		t.Errorf("Expected title '%s', got '%s'", post.Title, responsePost.Title)
+	}
+}
 
-// 	// Test without CSRF token
-// 	post := &domain.Post{
-// 		Title:   "Test Post",
-// 		Content: "Test Content",
-// 	}
-// 	jsonData, _ := json.Marshal(post)
+// TestXSS tests protection against XSS attacks
+func TestXSS(t *testing.T) {
+	repo := repository.NewMemoryPostRepository()
+	svc := service.NewPostService(repo)
+	router := setupRouter()
+	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
 
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 	router.ServeHTTP(w, req)
+	// Test XSS in content
+	post := &domain.Post{
+		Title:   "Test Post",
+		Content: "<script>alert('xss')</script>",
+	}
+	jsonData, _ := json.Marshal(post)
 
-// 	if w.Code != http.StatusCreated {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
-// 	}
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	router.ServeHTTP(w, req)
 
-// 	// Test with invalid CSRF token
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
-// 	req.Header.Set("X-CSRF-Token", "invalid-token")
-// 	router.ServeHTTP(w, req)
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
+	}
 
-// 	if w.Code != http.StatusCreated {
-// 		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
-// 	}
-// }
+	// Verify the content was properly escaped
+	var responsePost domain.Post
+	if err := json.NewDecoder(w.Body).Decode(&responsePost); err != nil {
+		t.Errorf("Error decoding response: %v", err)
+	}
 
-// // MockPostRepository is a mock implementation of PostRepository for testing
-// type MockPostRepository struct {
-// 	CreateFunc  func(ctx context.Context, post *domain.Post) error
-// 	GetByIDFunc func(ctx context.Context, id uint) (*domain.Post, error)
-// 	GetBySlugFunc func(ctx context.Context, slug string) (*domain.Post, error)
-// 	GetAllFunc func(ctx context.Context) ([]*domain.Post, error)
-// 	UpdateFunc func(ctx context.Context, post *domain.Post) error
-// 	DeleteFunc func(ctx context.Context, id uint) error
-// }
+	if responsePost.Content != post.Content {
+		t.Errorf("Expected content '%s', got '%s'", post.Content, responsePost.Content)
+	}
+}
 
-// func (m *MockPostRepository) Create(ctx context.Context, post *domain.Post) error {
-// 	if m.CreateFunc != nil {
-// 		return m.CreateFunc(ctx, post)
-// 	}
-// 	return nil
-// }
+// TestCSRF tests protection against CSRF attacks
+func TestCSRF(t *testing.T) {
+	repo := repository.NewMemoryPostRepository()
+	svc := service.NewPostService(repo)
+	router := setupRouter()
+	router.POST("/posts", middleware.RequireEditor(), CreatePost(svc))
 
-// func (m *MockPostRepository) GetByID(ctx context.Context, id uint) (*domain.Post, error) {
-// 	if m.GetByIDFunc != nil {
-// 		return m.GetByIDFunc(ctx, id)
-// 	}
-// 	return nil, nil
-// }
+	// Test without CSRF token
+	post := &domain.Post{
+		Title:   "Test Post",
+		Content: "Test Content",
+	}
+	jsonData, _ := json.Marshal(post)
 
-// func (m *MockPostRepository) GetBySlug(ctx context.Context, slug string) (*domain.Post, error) {
-// 	if m.GetBySlugFunc != nil {
-// 		return m.GetBySlugFunc(ctx, slug)
-// 	}
-// 	return nil, nil
-// }
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	router.ServeHTTP(w, req)
 
-// func (m *MockPostRepository) GetAll(ctx context.Context) ([]*domain.Post, error) {
-// 	if m.GetAllFunc != nil {
-// 		return m.GetAllFunc(ctx)
-// 	}
-// 	return nil, nil
-// }
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
+	}
 
-// func (m *MockPostRepository) Update(ctx context.Context, post *domain.Post) error {
-// 	if m.UpdateFunc != nil {
-// 		return m.UpdateFunc(ctx, post)
-// 	}
-// 	return nil
-// }
+	// Test with invalid CSRF token
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+getAuthToken("editor", domain.Editor))
+	req.Header.Set("X-CSRF-Token", "invalid-token")
+	router.ServeHTTP(w, req)
 
-// func (m *MockPostRepository) Delete(ctx context.Context, id uint) error {
-// 	if m.DeleteFunc != nil {
-// 		return m.DeleteFunc(ctx, id)
-// 	}
-// 	return nil
-// }
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
+	}
+}
