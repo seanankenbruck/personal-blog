@@ -259,26 +259,52 @@ func TestLogin(t *testing.T) {
 }
 
 func TestLogout(t *testing.T) {
+	// Create a new router with the user handler
 	router := setupRouter()
-	router.GET("/logout", Logout())
+	userRepo := repository.NewMemoryUserRepository()
+	userSvc := service.NewUserService(userRepo)
+	userHandler := NewUserHandler(userSvc)
 
+	// Set up the logout route with the handler method
+	router.GET("/logout", userHandler.Logout)
+
+	// Create a request with Accept header for HTML
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/logout", nil)
+	req.Header.Set("Accept", "text/html")
+
+	// Set a JWT cookie to simulate a logged-in user
+	req.AddCookie(&http.Cookie{
+		Name:  "jwt",
+		Value: GetAuthToken("editor", domain.Editor),
+	})
+
+	// Execute the request
 	router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+	// Check that we get a redirect to login page
+	if w.Code != http.StatusFound {
+		t.Errorf("Expected status code %d, got %d", http.StatusFound, w.Code)
 	}
 
-	var response struct {
-		Message string `json:"message"`
-	}
-	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
-		t.Errorf("Error decoding response: %v", err)
+	// Check that the location header points to /login
+	location := w.Header().Get("Location")
+	if location != "/login" {
+		t.Errorf("Expected redirect to /login, got %s", location)
 	}
 
-	if response.Message != "logged out successfully" {
-		t.Errorf("Expected message 'logged out successfully', got '%s'", response.Message)
+	// Check that the JWT cookie was cleared
+	var cookieCleared bool
+	for _, cookie := range w.Result().Cookies() {
+		if cookie.Name == "jwt" {
+			if cookie.Value == "" && cookie.MaxAge < 0 {
+				cookieCleared = true
+			}
+			break
+		}
+	}
+	if !cookieCleared {
+		t.Error("JWT cookie was not properly cleared")
 	}
 }
 

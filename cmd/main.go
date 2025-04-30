@@ -75,7 +75,7 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 		public.POST("/contact", handler.SubmitContact())
 		public.GET("/login", handler.LoginPage())
 		public.POST("/login", userHandler.Login)
-		public.GET("/logout", handler.Logout())
+		public.GET("/logout", userHandler.Logout)
 		public.POST("/preview", postHandler.PreviewMarkdown())
 	}
 

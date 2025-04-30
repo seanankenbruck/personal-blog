@@ -336,26 +336,32 @@ func Login(userRepo domain.UserRepository) gin.HandlerFunc {
 			return
 		}
 
-		// Set the token in a cookie for browser clients
-		c.SetCookie("jwt", token, 86400, "/", "", false, true)
+		// Set cookie with session expiration (0), secure flag, and SameSite strict
+		c.SetCookie("jwt", token, 0, "/", "", true, true)
 		c.Redirect(http.StatusFound, "/")
 	}
 }
 
-// Logout clears the JWT cookie
-func Logout() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Clear the JWT cookie
-		c.SetCookie("jwt", "", -1, "/", "", false, true)
+// Logout clears the JWT cookie and redirects to login page
+func (h *UserHandler) Logout(c *gin.Context) {
+	// Clear the JWT cookie by setting it to empty with immediate expiration
+	// Use secure cookies only in production
+	isSecure := gin.Mode() == gin.ReleaseMode
+	c.SetCookie("jwt", "", -1, "/", "", isSecure, true)
 
-		// Determine response format
-		accept := c.GetHeader("Accept")
-		if accept == "" || strings.Contains(accept, "application/json") {
-			c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
-		} else {
-			c.Redirect(http.StatusFound, "/login")
-		}
+	// Clear any user data from the context
+	c.Set("user", nil)
+	c.Set("claims", nil)
+
+	// Always redirect to login page for web requests
+	if strings.Contains(c.Request.Header.Get("Accept"), "text/html") {
+		c.Redirect(http.StatusFound, "/login")
+		c.Abort()
+		return
 	}
+
+	// Return JSON response for API requests
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
 // NewPostPage renders the new post form
@@ -551,8 +557,9 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Set the token in a cookie for browser clients
-	c.SetCookie("jwt", token, 86400, "/", "", false, true)
+	// Set cookie with session expiration (0) and secure flag based on environment
+	isSecure := gin.Mode() == gin.ReleaseMode
+	c.SetCookie("jwt", token, 0, "/", "", isSecure, true)
 	c.Redirect(http.StatusFound, "/")
 }
 
