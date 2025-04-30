@@ -20,11 +20,7 @@
                 <div>
                     <textarea id="content" name="content" rows="15" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        oninput="updatePreview()">{{.Post.Content}}</textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Preview</label>
-                    <div id="preview" class="mt-1 p-4 border rounded-md bg-gray-50 min-h-[300px] prose max-w-none"></div>
+                        >{{.Post.Content}}</textarea>
                 </div>
             </div>
         </div>
@@ -35,24 +31,6 @@
     </form>
 
     <script>
-    function updatePreview() {
-        const content = document.getElementById('content').value;
-        fetch('/preview', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ content }),
-        })
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('preview').innerHTML = html;
-        });
-    }
-
-    // Initial preview
-    updatePreview();
-
     document.getElementById('postForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = {
