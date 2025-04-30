@@ -36,6 +36,23 @@ func TestImageUpload(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
+	// Create uploads directory if it doesn't exist
+	uploadsDir := filepath.Join("static", "uploads")
+	err = os.MkdirAll(uploadsDir, 0755)
+	assert.NoError(t, err)
+
+	// Register cleanup for the uploads directory
+	t.Cleanup(func() {
+		// Clean up the static/uploads directory and its parent if empty
+		if err := os.RemoveAll(uploadsDir); err != nil {
+			t.Logf("Warning: failed to clean up uploads directory %s: %v", uploadsDir, err)
+		}
+		// Try to remove the static directory if it's empty
+		if err := os.Remove(filepath.Dir(uploadsDir)); err != nil && !os.IsNotExist(err) {
+			t.Logf("Note: could not remove static directory (it might not be empty): %v", err)
+		}
+	})
+
 	// Create a minimal valid JPEG file
 	// JPEG file format starts with FF D8 FF and ends with FF D9
 	jpegData := []byte{
