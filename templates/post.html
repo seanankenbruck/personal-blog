@@ -16,7 +16,7 @@
         <div class="prose max-w-none">
             {{ .Post.Content | safeHTML }}
         </div>
-        {{if .User}}
+        {{if isEditor $.User}}
         <div class="post-actions">
             <a href="/posts/{{.Post.Slug}}/edit" class="btn">Edit Post</a>
             <button onclick="deletePost('{{.Post.Slug}}')" class="btn btn-danger">Delete Post</button>

@@ -52,6 +52,11 @@ func TestMain(m *testing.M) {
 			doc := p.Parse([]byte(text))
 			return string(markdown.Render(doc, renderer))
 		},
+		// Returns true if the given user is an editor
+		"isEditor": func(u interface{}) bool {
+			user, ok := u.(*domain.User)
+			return ok && user != nil && user.Role == domain.Editor
+		},
 	})
 
 	// Get the absolute path to the templates directory
@@ -100,6 +105,11 @@ func setupRouter() *gin.Engine {
 			renderer := html.NewRenderer(opts)
 			doc := p.Parse([]byte(text))
 			return string(markdown.Render(doc, renderer))
+		},
+		// Returns true if the given user is an editor
+		"isEditor": func(u interface{}) bool {
+			user, ok := u.(*domain.User)
+			return ok && user != nil && user.Role == domain.Editor
 		},
 	})
 

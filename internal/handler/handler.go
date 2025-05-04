@@ -31,6 +31,11 @@ func SetupTemplates(r *gin.Engine) error {
 		"safeHTML": func(text string) template.HTML {
 			return template.HTML(text)
 		},
+		// Returns true if the given user is an editor
+		"isEditor": func(user interface{}) bool {
+			u, ok := user.(*domain.User)
+			return ok && u != nil && u.Role == domain.Editor
+		},
 	})
 
 	// Get the absolute path to the templates directory

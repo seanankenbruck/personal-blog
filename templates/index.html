@@ -34,14 +34,18 @@
             </div>
             <div>
                 <a href="/posts/{{.Slug}}" class="btn">Read More</a>
+                {{if isEditor $.User}}
                 <a href="/posts/{{.Slug}}/edit" class="btn">Edit</a>
                 <button onclick="deletePost('{{.Slug}}')" class="btn btn-danger">Delete</button>
+                {{end}}
             </div>
         </div>
         {{end}}
     </div>
 
+    {{if isEditor .User}}
     <a href="/posts/new" class="btn">Create New Post</a>
+    {{end}}
 
     <script>
         function deletePost(slug) {
