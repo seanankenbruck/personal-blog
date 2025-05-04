@@ -26,6 +26,7 @@ type Post struct {
 	gorm.Model
 	Title     string    `gorm:"type:varchar(255);not null" json:"title"`
 	Content   string    `gorm:"type:text;not null" json:"content"`
+	Description string    `gorm:"type:text;not null" json:"description"`
 	Slug      string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"slug"`
 	Published bool      `gorm:"default:false" json:"published"`
 	CreatedAt time.Time `gorm:"not null" json:"created_at"`
@@ -63,6 +64,9 @@ func (p *Post) Validate() error {
 	if p.Content == "" {
 		return errors.New("content is required")
 	}
+	if p.Description == "" {
+		return errors.New("description is required")
+	}
 	return nil
 }
 
@@ -70,6 +74,7 @@ func (p *Post) Validate() error {
 func (p *Post) Update(newPost *Post) {
 	p.Title = newPost.Title
 	p.Content = newPost.Content
+	p.Description = newPost.Description
 	p.Slug = newPost.GenerateSlug()
 	p.Published = newPost.Published
 	p.UpdatedAt = time.Now()

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -62,6 +64,16 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 
 	// Apply authentication middleware
 	r.Use(middleware.AuthMiddleware())
+
+	// Custom 404 handler for nonexistent routes
+	r.NoRoute(func(c *gin.Context) {
+		accept := c.GetHeader("Accept")
+		if accept == "" || strings.Contains(accept, "application/json") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Page not found"})
+		} else {
+			c.HTML(http.StatusNotFound, "404.html", gin.H{"Title": "404 - Page Not Found", "Year": time.Now().Year()})
+		}
+	})
 
 	// Public routes
 	public := r.Group("/")

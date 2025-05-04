@@ -15,6 +15,11 @@
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         </div>
         <div>
+            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+            <input type="text" id="description" name="description" value="{{.Post.Description}}" required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        </div>
+        <div>
             <label for="content" class="block text-sm font-medium text-gray-700">Content (Markdown)</label>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -36,6 +41,7 @@
         const formData = {
             title: document.getElementById('title').value,
             content: document.getElementById('content').value,
+            description: document.getElementById('description').value
         };
 
         fetch('/posts/{{.Post.Slug}}', {

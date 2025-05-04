@@ -17,6 +17,7 @@ func TestPost_Validate(t *testing.T) {
 			post: &Post{
 				Title:   "Test Post",
 				Content: "This is a test post",
+				Description: "This is a test description",
 			},
 			wantErr: false,
 		},
@@ -25,6 +26,7 @@ func TestPost_Validate(t *testing.T) {
 			post: &Post{
 				Title:   "",
 				Content: "This is a test post",
+				Description: "This is a test description",
 			},
 			wantErr: true,
 		},
@@ -33,6 +35,16 @@ func TestPost_Validate(t *testing.T) {
 			post: &Post{
 				Title:   "Test Post",
 				Content: "",
+				Description: "This is a test description",
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty description",
+			post: &Post{
+				Title:   "Test Post",
+				Content: "Test Content",
+				Description: "",
 			},
 			wantErr: true,
 		},
@@ -58,11 +70,13 @@ func TestPost_Update(t *testing.T) {
 		},
 		Title:     "Original Title",
 		Content:   "Original Content",
+		Description: "Original Description",
 	}
 
 	newPost := &Post{
 		Title:   "New Title",
 		Content: "New Content",
+		Description: "New Description",
 	}
 
 	post.Update(newPost)
@@ -72,6 +86,9 @@ func TestPost_Update(t *testing.T) {
 	}
 	if post.Content != newPost.Content {
 		t.Errorf("Expected content %v, got %v", newPost.Content, post.Content)
+	}
+	if post.Description != newPost.Description {
+		t.Errorf("Expected description %v, got %v", newPost.Description, post.Description)
 	}
 	if post.UpdatedAt == now {
 		t.Error("UpdatedAt should have changed")

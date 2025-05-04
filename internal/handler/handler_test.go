@@ -142,8 +142,9 @@ func TestGetPosts(t *testing.T) {
 	defer cancel()
 
 	post := &domain.Post{
-		Title:   "Test Post",
-		Content: "Test Content",
+		Title:       "Test Post",
+		Content:     "Test Content",
+		Description: "Test Description",
 	}
 	if err := svc.CreatePost(ctx, post); err != nil {
 		t.Fatalf("Failed to create test post: %v", err)
@@ -181,8 +182,9 @@ func TestCreatePost(t *testing.T) {
 
 	// Create test data
 	post := &domain.Post{
-		Title:   "New Post",
-		Content: "New Content",
+		Title:       "New Post",
+		Content:     "New Content",
+		Description: "New Description",
 	}
 	jsonData, _ := json.Marshal(post)
 
@@ -321,8 +323,9 @@ func TestGetPost(t *testing.T) {
 	defer cancel()
 
 	post := &domain.Post{
-		Title:   "Test Post",
-		Content: "Test Content",
+		Title:       "Test Post",
+		Content:     "Test Content",
+		Description: "Test Description",
 	}
 	if err := svc.CreatePost(ctx, post); err != nil {
 		t.Fatalf("Failed to create test post: %v", err)
@@ -366,8 +369,9 @@ func TestUpdatePost(t *testing.T) {
 	defer cancel()
 
 	post := &domain.Post{
-		Title:   "Test Post",
-		Content: "Test Content",
+		Title:       "Test Post",
+		Content:     "Test Content",
+		Description: "Test Description",
 	}
 	if err := svc.CreatePost(ctx, post); err != nil {
 		t.Fatalf("Failed to create test post: %v", err)
@@ -376,9 +380,10 @@ func TestUpdatePost(t *testing.T) {
 
 	// Update the post
 	updateData := &domain.Post{
-		Slug:    post.Slug,
-		Title:   "Updated Post",
-		Content: "Updated Content",
+		Slug:        post.Slug,
+		Title:       "Updated Post",
+		Content:     "Updated Content",
+		Description: "Updated Description",
 	}
 
 	// Update using the service directly
@@ -417,8 +422,9 @@ func TestDeletePost(t *testing.T) {
 	defer cancel()
 
 	post := &domain.Post{
-		Title:   "Test Post",
-		Content: "Test Content",
+		Title:       "Test Post",
+		Content:     "Test Content",
+		Description: "Test Description",
 	}
 	if err := svc.CreatePost(ctx, post); err != nil {
 		t.Fatalf("Failed to create test post: %v", err)
@@ -595,8 +601,9 @@ func TestDuplicateSlug(t *testing.T) {
 
 	// Create first post
 	post1 := &domain.Post{
-		Title:   "Test Post",
-		Content: "Test Content",
+		Title:       "Test Post",
+		Content:     "Test Content",
+		Description: "Test Description",
 	}
 	jsonData1, _ := json.Marshal(post1)
 
@@ -612,8 +619,9 @@ func TestDuplicateSlug(t *testing.T) {
 
 	// Try to create post with same title (should generate same slug)
 	post2 := &domain.Post{
-		Title:   "Test Post", // Same title
-		Content: "Different Content",
+		Title:       "Test Post", // Same title
+		Content:     "Different Content",
+		Description: "Different Description",
 	}
 	jsonData2, _ := json.Marshal(post2)
 
@@ -652,8 +660,9 @@ func TestConcurrentPosts(t *testing.T) {
 		go func(index int) {
 			defer wg.Done()
 			post := &domain.Post{
-				Title:   fmt.Sprintf("Concurrent Post %d", index),
-				Content: fmt.Sprintf("Content %d", index),
+				Title:       fmt.Sprintf("Concurrent Post %d", index),
+				Content:     fmt.Sprintf("Content %d", index),
+				Description: fmt.Sprintf("Description %d", index),
 			}
 			jsonData, _ := json.Marshal(post)
 
@@ -807,6 +816,23 @@ func TestMissingFields(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
 	}
+
+	// Test missing description
+	post = &domain.Post{
+		Title: "Test Title",
+		Content: "Test Content",
+	}
+	jsonData, _ = json.Marshal(post)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/posts", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+GetAuthToken("editor", domain.Editor))
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, w.Code)
+	}
 }
 
 // TestSQLInjection tests protection against SQL injection attempts
@@ -819,7 +845,8 @@ func TestSQLInjection(t *testing.T) {
 	// Test SQL injection in title
 	post := &domain.Post{
 		Title:   "'; DROP TABLE posts; --",
-		Content: "Test Content",
+		Content:     "Test Content",
+		Description: "Test Description",
 	}
 	jsonData, _ := json.Marshal(post)
 
@@ -853,8 +880,9 @@ func TestXSS(t *testing.T) {
 
 	// Test XSS in content
 	post := &domain.Post{
-		Title:   "Test Post",
-		Content: "<script>alert('xss')</script>",
+		Title:       "Test Post",
+		Content:     "<script>alert('xss')</script>",
+		Description: "Test Description",
 	}
 	jsonData, _ := json.Marshal(post)
 
@@ -888,8 +916,9 @@ func TestCSRF(t *testing.T) {
 
 	// Test without CSRF token
 	post := &domain.Post{
-		Title:   "Test Post",
-		Content: "Test Content",
+		Title:       "Test Post",
+		Content:     "Test Content",
+		Description: "Test Description",
 	}
 	jsonData, _ := json.Marshal(post)
 
