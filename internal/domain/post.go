@@ -16,7 +16,6 @@ import (
 // Unique index on slug ensures URL uniqueness
 // Slug is generated from Title
 // Content is stored as text
-// Author can be a username or identifier
 // -------------------------------------------
 // Migrate this model with AutoMigrate
 //   db.AutoMigrate(&Post{})
