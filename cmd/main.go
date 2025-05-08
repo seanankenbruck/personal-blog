@@ -35,17 +35,20 @@ func main() {
 	// Initialize repositories
 	postRepo := repository.NewPostgresPostRepository(db.DB)
 	userRepo := repository.NewMemoryUserRepository()
+	subscriberRepo := repository.NewMemorySubscriberRepository()
 
 	// Initialize services
 	postService := service.NewPostService(postRepo)
 	userService := service.NewUserService(userRepo)
+	subscriberService := service.NewSubscriberService(subscriberRepo)
 
 	// Initialize handlers
 	postHandler := handler.NewPostHandler(postService)
 	userHandler := handler.NewUserHandler(userService)
+	subscriberHandler := handler.NewSubscriberHandler(subscriberService)
 
 	// Set up routes
-	setupRoutes(r, postHandler, userHandler)
+	setupRoutes(r, postHandler, userHandler, subscriberHandler)
 
 	// Start server
 	if err := r.Run(":8080"); err != nil {
@@ -53,7 +56,7 @@ func main() {
 	}
 }
 
-func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *handler.UserHandler) {
+func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *handler.UserHandler, subscriberHandler *handler.SubscriberHandler) {
 	// Add context timeout middleware
 	r.Use(func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
@@ -89,6 +92,9 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 		public.POST("/login", userHandler.Login)
 		public.GET("/logout", userHandler.Logout)
 		public.POST("/preview", postHandler.PreviewMarkdown())
+		public.POST("/subscribe", subscriberHandler.Subscribe)
+		public.GET("/confirm", subscriberHandler.ConfirmSubscription)
+		public.POST("/unsubscribe", subscriberHandler.Unsubscribe)
 	}
 
 	// Protected routes
@@ -101,5 +107,6 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 		editor.PUT("/posts/:slug", postHandler.UpdatePost)
 		editor.DELETE("/posts/:slug", postHandler.DeletePost)
 		editor.POST("/upload", postHandler.UploadImage)
+		editor.GET("/subscribers", subscriberHandler.ListSubscribers)
 	}
 }

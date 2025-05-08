@@ -2,10 +2,6 @@ package domain
 
 import (
 	"context"
-	"errors"
-	"crypto/rand"
-	"encoding/hex"
-	"time"
 
 	"gorm.io/gorm"
 )
