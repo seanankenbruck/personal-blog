@@ -5,10 +5,16 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"net/smtp"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/seanankenbruck/blog/internal/domain"
 )
+
+var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
 // SubscriberServiceImpl implements domain.SubscriberService
 //
@@ -26,6 +32,9 @@ func (s *SubscriberServiceImpl) Subscribe(ctx context.Context, email string) (*d
 	email = strings.TrimSpace(strings.ToLower(email))
 	if email == "" {
 		return nil, errors.New("email is required")
+	}
+	if !emailRegex.MatchString(email) {
+		return nil, errors.New("invalid email format")
 	}
 	// Check if already exists
 	_, err := s.repo.GetByEmail(ctx, email)
@@ -48,6 +57,13 @@ func (s *SubscriberServiceImpl) Subscribe(ctx context.Context, email string) (*d
 	if err := s.repo.Create(ctx, subscriber); err != nil {
 		return nil, err
 	}
+
+	// Send confirmation email
+	if err := sendConfirmationEmail(subscriber.Email, subscriber.ConfirmationToken); err != nil {
+		// Log error but do not fail subscription
+		fmt.Fprintf(os.Stderr, "Failed to send confirmation email: %v\n", err)
+	}
+
 	return subscriber, nil
 }
 
@@ -94,4 +110,24 @@ func generateToken(n int) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+// sendConfirmationEmail sends a confirmation email with the token link
+var sendConfirmationEmail = func(to, token string) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	smtpUser := os.Getenv("SMTP_USER")
+	smtpPass := os.Getenv("SMTP_PASS")
+	sender := os.Getenv("EMAIL_SENDER")
+	appHost := os.Getenv("APP_HOST")
+	if smtpHost == "" || smtpPort == "" || smtpUser == "" || smtpPass == "" || sender == "" || appHost == "" {
+		return nil // Email sending not configured
+	}
+
+	confirmURL := fmt.Sprintf("%s/confirm?token=%s", appHost, token)
+	subject := "Confirm your subscription"
+	body := fmt.Sprintf("Thank you for subscribing! Please confirm your subscription by clicking the link below:\n\n%s\n\nIf you did not request this, please ignore this email.", confirmURL)
+	msg := fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s", to, subject, body)
+	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+	return smtp.SendMail(smtpHost+":"+smtpPort, auth, sender, []string{to}, []byte(msg))
 }

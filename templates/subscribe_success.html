@@ -1,0 +1,17 @@
+{{define "subscribe_success.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Subscribed!</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Thank you for subscribing!</h1>
+        <p>A confirmation email has been sent to <strong>{{.Email}}</strong>. Please check your inbox and click the confirmation link to complete your subscription.</p>
+        <a href="/" class="btn">Return to Home</a>
+    </div>
+</body>
+</html>
+{{end}}

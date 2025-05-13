@@ -47,6 +47,15 @@
     <a href="/posts/new" class="btn">Create New Post</a>
     {{end}}
 
+    <!-- Subscription form -->
+    <div class="subscribe-box">
+        <h2>Subscribe for Updates</h2>
+        <form action="/subscribe" method="POST">
+            <input type="email" name="email" placeholder="Enter your email" required>
+            <button type="submit" class="btn">Subscribe</button>
+        </form>
+    </div>
+
     <script>
         function deletePost(slug) {
             if (confirm('Are you sure you want to delete this post?')) {

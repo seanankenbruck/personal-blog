@@ -2,12 +2,27 @@ package service
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/seanankenbruck/blog/internal/domain"
 	"github.com/seanankenbruck/blog/internal/repository"
 	"github.com/stretchr/testify/assert"
 )
+
+// Save the original sendConfirmationEmail for restoration after tests
+var originalSendConfirmationEmail = sendConfirmationEmail
+
+func mockSendConfirmationEmail(to, token string) error {
+	return nil // Do nothing
+}
+
+func TestMain(m *testing.M) {
+	sendConfirmationEmail = mockSendConfirmationEmail
+	code := m.Run()
+	sendConfirmationEmail = originalSendConfirmationEmail
+	os.Exit(code)
+}
 
 func setupTestService() (*SubscriberServiceImpl, *repository.MemorySubscriberRepository) {
 	repo := repository.NewMemorySubscriberRepository()
@@ -39,6 +54,14 @@ func TestSubscribe_EmptyEmail(t *testing.T) {
 	ctx := context.Background()
 	_, err := service.Subscribe(ctx, "")
 	assert.Error(t, err)
+}
+
+func TestSubscribe_InvalidEmailFormat(t *testing.T) {
+	service, _ := setupTestService()
+	ctx := context.Background()
+	_, err := service.Subscribe(ctx, "invalid-email")
+	assert.Error(t, err)
+	assert.Equal(t, "invalid email format", err.Error())
 }
 
 func TestConfirmSubscription_Success(t *testing.T) {
