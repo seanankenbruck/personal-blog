@@ -20,31 +20,25 @@ func NewUserRepository() *UserRepository {
 	return &UserRepository{db: db.DB}
 }
 
-// Create creates a new user, hashing the password before saving
+// Create creates a new user
 func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
-	// Hash the plaintext password
-	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	user.Password = string(hash)
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
 // Authenticate finds the user by username and compares the password hash
-func (r *UserRepository) Authenticate(ctx context.Context, username, password string) (*domain.User, bool) {
+func (r *UserRepository) Authenticate(ctx context.Context, username, password string) (*domain.User, error) {
 	var user domain.User
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, false
+			return nil, domain.ErrInvalidCredentials
 		}
-		return nil, false
+		return nil, err
 	}
 
 	// Compare hash with provided password
 	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)) != nil {
-		return nil, false
+		return nil, domain.ErrInvalidCredentials
 	}
-	return &user, true
+	return &user, nil
 }

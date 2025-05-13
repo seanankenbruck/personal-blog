@@ -13,6 +13,7 @@ import (
 	"github.com/seanankenbruck/blog/internal/middleware"
 	"github.com/seanankenbruck/blog/internal/repository"
 	"github.com/seanankenbruck/blog/internal/service"
+	"github.com/seanankenbruck/blog/internal/domain"
 )
 
 func main() {
@@ -34,13 +35,17 @@ func main() {
 
 	// Initialize repositories
 	postRepo := repository.NewPostgresPostRepository(db.DB)
-	userRepo := repository.NewMemoryUserRepository()
-	subscriberRepo := repository.NewMemorySubscriberRepository()
+	userRepo := repository.NewUserRepository()
+	subscriberRepo := repository.NewPostgresSubscriberRepository(db.DB)
 
 	// Initialize services
 	postService := service.NewPostService(postRepo)
 	userService := service.NewUserService(userRepo)
 	subscriberService := service.NewSubscriberService(subscriberRepo)
+
+	// Seed initial editor user if not exists
+	admin := &domain.User{Username: "admin", Password: "Admin$trong1", Role: domain.Editor}
+	_ = userService.CreateUser(context.Background(), admin)
 
 	// Initialize handlers
 	postHandler := handler.NewPostHandler(postService)

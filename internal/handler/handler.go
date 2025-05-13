@@ -621,7 +621,12 @@ func (h *SubscriberHandler) Subscribe(c *gin.Context) {
 
 	subscriber, err := h.subscriberService.Subscribe(ctx, email)
 	if err != nil {
+		accept := c.GetHeader("Accept")
 		if err == domain.ErrSubscriberExists {
+			if strings.Contains(accept, "text/html") || c.ContentType() == "application/x-www-form-urlencoded" {
+				c.HTML(http.StatusConflict, "subscribe_exists.html", gin.H{"Email": email})
+				return
+			}
 			c.JSON(http.StatusConflict, gin.H{"error": "You are already subscribed."})
 		} else {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
