@@ -1,39 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Create New Post - Blog</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Post - Pacific Northwest Blog</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <a href="/" class="back-link">← Back to all posts</a>
-
-    <h1>Create New Post</h1>
-    <form id="postForm" class="space-y-6">
-        <div>
-            <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
-            <input type="text" id="title" name="title" required
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-        </div>
-        <div>
-            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-            <input type="text" id="description" name="description" required
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-        </div>
-        <div>
-            <label for="content" class="block text-sm font-medium text-gray-700">Content (Markdown)</label>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <textarea id="content" name="content" rows="15" required
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    </textarea>
-                </div>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/portfolio" class="nav-link">Portfolio</a>
+                <a href="/contact" class="nav-link">Contact</a>
+                {{if .User}}
+                    <span style="color: white; margin-left: auto;">Logged in as {{.User.Username}} ({{.User.Role}})</span>
+                    <a href="/logout" class="nav-link">Logout</a>
+                {{else}}
+                    <a href="/login" class="nav-link" style="margin-left: auto;">Login</a>
+                {{end}}
             </div>
         </div>
-        <button type="submit"
-            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-            Create Post
-        </button>
-    </form>
+    </nav>
+
+    <main>
+        <div class="container">
+            <a href="/" class="back-link">Back to all posts</a>
+
+            <h1>Create New Post</h1>
+            <div class="contact-form">
+                <form id="postForm">
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <input type="text" id="description" name="description" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Content (Markdown)</label>
+                        <textarea id="content" name="content" rows="15" required></textarea>
+                    </div>
+                    <button type="submit" class="btn">Create Post</button>
+                </form>
+            </div>
 
     <script>
     const content = document.getElementById('content');
@@ -63,6 +77,8 @@
         });
     });
     </script>
+        </div>
+    </main>
     <footer class="footer">© 2025 Sean Ankenbruck • <a href="https://github.com/seanankenbruck">GitHub</a> • <a href="https://linkedin.com/in/seanankenbruck">LinkedIn</a></footer>
 </body>
 </html>
