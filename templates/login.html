@@ -3,17 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sean Ankenbruck</title>
+    <title>Login - Pacific Northwest Blog</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/portfolio" class="nav-link">Portfolio</a>
-        <a href="/contact" class="nav-link">Contact</a>
+        <div class="container">
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/portfolio" class="nav-link">Portfolio</a>
+                <a href="/contact" class="nav-link">Contact</a>
+            </div>
+        </div>
     </nav>
 
-    <div class="container">
+    <main>
+        <div class="container">
         <div class="login-form">
             <h2>Login</h2>
             {{if .Error}}
@@ -31,7 +39,8 @@
                 <button type="submit" class="btn">Login</button>
             </form>
         </div>
-    </div>
+        </div>
+    </main>
 
     <footer class="footer">
         © 2025 Sean Ankenbruck • <a href="https://github.com/seanankenbruck">GitHub</a> • <a href="https://linkedin.com/in/seanankenbruck">LinkedIn</a>

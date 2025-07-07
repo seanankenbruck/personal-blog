@@ -1,26 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Blog</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacific Northwest Blog</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-links">
-            <a href="/" class="nav-link">Home</a>
-            <a href="/portfolio" class="nav-link">Portfolio</a>
-            <a href="/contact" class="nav-link">Contact</a>
-                <!-- {{if .User}}
-                        <span>Logged in as {{.User.Username}} ({{.User.Role}})</span>
-                        <a href="/logout" class="nav-link">Logout</a>
+        <div class="container">
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/portfolio" class="nav-link">Portfolio</a>
+                <a href="/contact" class="nav-link">Contact</a>
+                {{if .User}}
+                    <span style="color: white; margin-left: auto;">Logged in as {{.User.Username}} ({{.User.Role}})</span>
+                    <a href="/logout" class="nav-link">Logout</a>
                 {{else}}
-                    <a href="/login" class="nav-link">Login</a>
+                    <a href="/login" class="nav-link" style="margin-left: auto;">Login</a>
                 {{end}}
-        </div> -->
+            </div>
+        </div>
     </nav>
-    <h1>Welcome to my blog</h1>
 
-    <div class="posts">
+    <main>
+        <div class="container">
+            <h1>Welcome to my blog</h1>
+
+            <div class="posts">
         {{range .Posts}}
         <div class="post">
             <h2 class="post-title">{{.Title}}</h2>
@@ -41,20 +51,22 @@
             </div>
         </div>
         {{end}}
-    </div>
+            </div>
 
-    {{if isEditor .User}}
-    <a href="/posts/new" class="btn">Create New Post</a>
-    {{end}}
+            {{if isEditor .User}}
+            <a href="/posts/new" class="btn">Create New Post</a>
+            {{end}}
 
-    <!-- Subscription form -->
-    <div class="subscribe-box">
-        <h2>Subscribe for Updates</h2>
-        <form action="/subscribe" method="POST">
-            <input type="email" name="email" placeholder="Enter your email" required>
-            <button type="submit" class="btn">Subscribe</button>
-        </form>
-    </div>
+            <!-- Subscription form -->
+            <div class="subscribe-box">
+                <h2>Subscribe for Updates</h2>
+                <form action="/subscribe" method="POST">
+                    <input type="email" name="email" placeholder="Enter your email" required>
+                    <button type="submit" class="btn">Subscribe</button>
+                </form>
+            </div>
+        </div>
+    </main>
 
     <script>
         function deletePost(slug) {
