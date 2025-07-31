@@ -1,6 +1,6 @@
 module github.com/seanankenbruck/blog
 
-go 1.23.0
+go 1.24.5
 
 toolchain go1.23.8
 

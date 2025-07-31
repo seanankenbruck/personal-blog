@@ -12,7 +12,7 @@ A modern, test-driven personal blog built with Go, featuring OpenTelemetry instr
 
 ## Prerequisites
 
-- Go 1.21 or later
+- Go 1.24.5 or later
 - PostgreSQL 12 or later
 - Docker (optional, for development)
 
