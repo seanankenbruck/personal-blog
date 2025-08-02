@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blog-config
+  namespace: blog
+  labels:
+    app: blog
+data:
+  # Application configuration
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "blog_db"
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+
+  # Nginx configuration
+  nginx.conf: |
+    server {
+        listen 80;
+        server_name _;
+
+        location / {
+            proxy_pass http://blog-service:8080;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /static/ {
+            proxy_pass http://blog-service:8080;
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+    }
