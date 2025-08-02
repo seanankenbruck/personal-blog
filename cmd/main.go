@@ -83,6 +83,11 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 		}
 	})
 
+	// Health check endpoint
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	})
+
 	// Public routes
 	public := r.Group("/")
 	{

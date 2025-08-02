@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: blog-app
-        image: seanankenbruck/blog:latest
+        image: smankenb/blog:latest
         ports:
         - containerPort: 8080
         env:

@@ -160,7 +160,7 @@ docker-compose down
 
 ### Prerequisites
 
-1. **Kubernetes Cluster**: EKS, GKE, or local (minikube)
+1. **Kubernetes Cluster**: EKS, GKE, or local (k3s)
 2. **kubectl**: Configured to access your cluster
 3. **Docker Image**: Pushed to a registry
 
