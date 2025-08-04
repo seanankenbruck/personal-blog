@@ -1,0 +1,72 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs/
+LICENSE
+
+# Environment files
+.env*
+.env.example
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test files
+*.test
+coverage.txt
+coverage/
+.nyc_output
+
+# Build artifacts
+bin/
+dist/
+build/
+
+# Dependencies (if any)
+node_modules/
+vendor/
+
+# Kubernetes manifests and deployment files
+deploy/
+manifests/
+configs/
+scripts/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker files (except Dockerfile)
+docker-compose*.yml
+.dockerignore
+
+# Backup files
+*.bak
+*.backup
+
+# Cache directories
+.cache/
+cache/

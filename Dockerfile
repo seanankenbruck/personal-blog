@@ -10,17 +10,24 @@ RUN adduser -D -g '' appuser
 # Set working directory
 WORKDIR /app
 
-# Copy go mod files
+# Copy go mod files first for better layer caching
 COPY go.mod go.sum ./
 
-# Download dependencies
-RUN go mod download
+# Download dependencies (this layer will be cached unless go.mod/go.sum changes)
+RUN go mod download && go mod verify
 
-# Copy source code
-COPY . .
+# Copy only the source code directories that are needed for building
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+COPY static/ ./static/
+COPY templates/ ./templates/
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags='-w -s -extldflags "-static"' -a -installsuffix cgo -o main cmd/main.go
+# Build the application with optimizations
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
+    go build \
+    -ldflags='-w -s -extldflags "-static"' \
+    -a -installsuffix cgo \
+    -o main cmd/main.go
 
 # Final stage - minimal image
 FROM scratch
@@ -46,10 +53,6 @@ USER appuser
 
 # Expose port
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/main", "-health-check"] || exit 1
 
 # Run the application
 ENTRYPOINT ["/main"]
