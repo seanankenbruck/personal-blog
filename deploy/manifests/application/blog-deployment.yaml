@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: blog-app
+  namespace: blog-app
+  labels:
+    app: blog-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: blog-app
+  template:
+    metadata:
+      labels:
+        app: blog-app
+    spec:
+      containers:
+        - name: blog-app
+          image: smankenb/personal-blog:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-config
+                  key: DB_PORT
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-config
+                  key: DB_USER
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-config
+                  key: DB_NAME
+            - name: DB_SSLMODE
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-config
+                  key: DB_SSLMODE
+            - name: DB_PASSWORD:
+              valueFrom:
+                secretKeyRef:
+                  name: blog-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-config
+                  key: REDIS_PORT
+            - name: GIN_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-config
+                  key: GIN_MODE
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: blog-secrets
+                  key: JWT_SECRET
+            - name: APP_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: blog-config
+                  key: APP_HOST
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              "memory": "256Mi"
+              "cpu": "200m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
