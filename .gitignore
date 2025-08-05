@@ -29,6 +29,7 @@ go.work
 # Generated secret files - these contain real secrets!
 manifests/secrets/generated-*
 **/generated-secrets.yaml
+**/generated-configmap.yaml
 
 # IDE specific files
 .idea/

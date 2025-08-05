@@ -55,15 +55,19 @@ spec:
               command:
                 - pg_isready
                 - -U
-                - postgres
+                - blog_user
+                - -d
+                - blog_db
           readinessProbe:
             exec:
               command:
                 - pg_isready
                 - -U
-                - postgres
-              initialDelaySeconds: 5
-              periodSeconds: 5
+                - blog_user
+                - -d
+                - blog_db
+            initialDelaySeconds: 5
+            periodSeconds: 5
       volumes:
         - name: postgres-storage
           persistentVolumeClaim:

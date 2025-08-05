@@ -15,7 +15,6 @@ import (
 	//"encoding/json"
 	"html/template"
 	"path/filepath"
-	"runtime"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
@@ -38,13 +37,15 @@ func SetupTemplates(r *gin.Engine) error {
 		},
 	})
 
-	// Get the absolute path to the templates directory
-	_, filename, _, _ := runtime.Caller(0)
-	rootDir := filepath.Dir(filepath.Dir(filepath.Dir(filename)))
-	templatesDir := filepath.Join(rootDir, "templates")
+	// Try container path first, then fall back to local development path
+	templatesPath := "/templates/*.html"
+	if _, err := os.Stat("/templates"); os.IsNotExist(err) {
+		// We're in local development, use relative path
+		templatesPath = "templates/*.html"
+	}
 
 	// Load templates
-	r.LoadHTMLGlob(filepath.Join(templatesDir, "*.html"))
+	r.LoadHTMLGlob(templatesPath)
 	return nil
 }
 

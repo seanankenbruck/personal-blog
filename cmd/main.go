@@ -87,6 +87,9 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 	public := r.Group("/")
 	{
 		public.GET("/", postHandler.HomePage)
+		public.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+		})
 		public.GET("/posts", postHandler.GetPosts)
 		public.GET("/posts/:slug", postHandler.GetPost)
 		public.GET("/about", handler.AboutPage())

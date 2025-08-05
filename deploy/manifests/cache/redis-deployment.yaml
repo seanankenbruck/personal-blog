@@ -39,5 +39,5 @@ spec:
               command:
                 - redis-cli
                 - ping
-              initialDelaySeconds: 5
-              periodSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5

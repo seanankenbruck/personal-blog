@@ -46,7 +46,7 @@ spec:
                 configMapKeyRef:
                   name: blog-config
                   key: DB_SSLMODE
-            - name: DB_PASSWORD:
+            - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: blog-secrets

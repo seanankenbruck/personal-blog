@@ -44,12 +44,12 @@ kubectl apply -f "$MANIFEST_DIR/storage/"
 
 # Wait for PVC to be bound
 echo "⏳ Waiting for PVC to be bound..."
-kubectl wait --for=condition=Bound pvc/postgres-pvc -n "$NAMESPACE" --timeout=60s
+kubectl wait --for=jsonpath='{.status.phase}'=Bound pvc/blog-postgres-pvc -n "$NAMESPACE" --timeout=60s
 
 # Deploy secrets and config
 echo "🔐 Applying secrets and configuration..."
-kubectl apply -f "$MANIFEST_DIR/secrets/"
-kubectl apply -f "$MANIFEST_DIR/configmaps/"
+kubectl apply -f "$MANIFEST_DIR/secrets/generated-secrets.yaml"
+kubectl apply -f "$MANIFEST_DIR/configmaps/generated-configmap.yaml"
 
 # Deploy database
 echo "🗄️ Deploying PostgreSQL..."
@@ -57,7 +57,7 @@ kubectl apply -f "$MANIFEST_DIR/database/"
 
 # Wait for database to be ready
 echo "⏳ Waiting for PostgreSQL to be ready..."
-kubectl wait --for=condition=available deployment/postgres -n "$NAMESPACE" --timeout=300s
+kubectl wait --for=condition=available deployment/blog-postgres -n "$NAMESPACE" --timeout=300s
 
 # Deploy cache
 echo "🚀 Deploying Redis..."
@@ -65,7 +65,7 @@ kubectl apply -f "$MANIFEST_DIR/cache/"
 
 # Wait for Redis to be ready
 echo "⏳ Waiting for Redis to be ready..."
-kubectl wait --for=condition=available deployment/redis -n "$NAMESPACE" --timeout=120s
+kubectl wait --for=condition=available deployment/blog-redis -n "$NAMESPACE" --timeout=120s
 
 # Deploy application
 echo "🌐 Deploying blog application..."
@@ -75,24 +75,24 @@ kubectl apply -f "$MANIFEST_DIR/application/"
 echo "⏳ Waiting for blog application to be ready..."
 kubectl wait --for=condition=available deployment/blog-app -n "$NAMESPACE" --timeout=300s
 
-# Deploy ingress
-echo "🌍 Setting up ingress..."
-kubectl apply -f "$MANIFEST_DIR/ingress/"
+# # Deploy ingress
+# echo "🌍 Setting up ingress..."
+# kubectl apply -f "$MANIFEST_DIR/ingress/"
 
-echo "✅ Deployment completed successfully!"
-echo ""
-echo "📊 Deployment status:"
-kubectl get pods -n "$NAMESPACE"
-echo ""
-echo "🔗 Services:"
-kubectl get services -n "$NAMESPACE"
-echo ""
-echo "🌐 Ingress:"
-kubectl get ingress -n "$NAMESPACE"
+# echo "✅ Deployment completed successfully!"
+# echo ""
+# echo "📊 Deployment status:"
+# kubectl get pods -n "$NAMESPACE"
+# echo ""
+# echo "🔗 Services:"
+# kubectl get services -n "$NAMESPACE"
+# echo ""
+# echo "🌐 Ingress:"
+# kubectl get ingress -n "$NAMESPACE"
 
-echo ""
-echo "🎉 Your blog is now deployed!"
-echo "📝 Next steps:"
-echo "1. Update your DNS to point to your cluster"
-echo "2. Check the application logs: kubectl logs -f deployment/blog-app -n $NAMESPACE"
-echo "3. Access your blog at: https://your-domain.com"
+# echo ""
+# echo "🎉 Blog application is now deployed!"
+# echo "📝 Next steps:"
+# echo "1. Update your DNS to point to your cluster"
+# echo "2. Check the application logs: kubectl logs -f deployment/blog-app -n $NAMESPACE"
+# echo "3. Access the blog at: https://seanankenbruck.com"
