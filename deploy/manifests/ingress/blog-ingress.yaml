@@ -3,18 +3,10 @@ kind: Ingress
 metadata:
   name: blog-ingress
   namespace: blog-app
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod" 
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - blog.smankenb.com
-      secretName: blog-tls
   rules:
-    - host: blog.smankenb.com
+    - host: 10.42.42.100.nip.io  # Using nip.io for IP-based access
       http:
         paths:
           - path: /
