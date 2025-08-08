@@ -18,7 +18,7 @@ fi
 
 # Check deployments
 echo "🚀 Checking deployments..."
-deployments=("postgres" "redis" "blog-app")
+deployments=("blog-postgres" "blog-redis" "blog-app")
 for deployment in "${deployments[@]}"; do
     if kubectl get deployment "$deployment" -n "$NAMESPACE" >/dev/null 2>&1; then
         ready=$(kubectl get deployment "$deployment" -n "$NAMESPACE" -o jsonpath='{.status.readyReplicas}')
@@ -55,8 +55,8 @@ fi
 
 # Check persistent volume claims
 echo "💾 Checking storage..."
-if kubectl get pvc postgres-pvc -n "$NAMESPACE" >/dev/null 2>&1; then
-    status=$(kubectl get pvc postgres-pvc -n "$NAMESPACE" -o jsonpath='{.status.phase}')
+if kubectl get pvc blog-postgres-pvc -n "$NAMESPACE" >/dev/null 2>&1; then
+    status=$(kubectl get pvc blog-postgres-pvc -n "$NAMESPACE" -o jsonpath='{.status.phase}')
     echo "✅ PostgreSQL PVC: $status"
 else
     echo "❌ PostgreSQL PVC not found"
