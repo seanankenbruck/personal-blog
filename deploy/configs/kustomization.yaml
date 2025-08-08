@@ -1,0 +1,45 @@
+# configs/kustomization.yaml - For environment-specific configurations
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: blog-app
+
+resources:
+- ../manifests/namespace.yaml
+- ../manifests/storage/
+- ../manifests/secrets/
+- ../manifests/configmaps/
+- ../manifests/database/
+- ../manifests/cache/
+- ../manifests/application/
+- ../manifests/ingress/
+
+# Patches for different environments
+patchesStrategicMerge: []
+
+# Image transformations
+images:
+- name: smankenb/personal-blog
+  newTag: latest
+
+# ConfigMap generator for environment-specific config
+configMapGenerator:
+- name: blog-config
+  envs:
+  - .env
+  behavior: merge
+
+secretGenerator:
+- name: blog-secrets
+  envs:
+  - .env.secrets
+  type: Opaque
+
+# Common labels
+commonLabels:
+  app.kubernetes.io/name: personal-blog
+  app.kubernetes.io/instance: blog-app
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/component: web-application
+  app.kubernetes.io/part-of: personal-blog
+  app.kubernetes.io/managed-by: kustomize

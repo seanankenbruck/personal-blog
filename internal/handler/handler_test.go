@@ -27,6 +27,7 @@ import (
 	"github.com/seanankenbruck/blog/internal/auth"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
+	"os"
 )
 
 var testRouter *gin.Engine
@@ -35,6 +36,15 @@ func TestMain(m *testing.M) {
 	log.Println("Setting up test router...")
 	gin.SetMode(gin.TestMode)
 	testRouter = gin.Default()
+
+	// Initialize JWT for tests
+	log.Println("Initializing JWT for tests...")
+	if os.Getenv("JWT_SECRET") == "" {
+		os.Setenv("JWT_SECRET", "test-jwt-secret-key-for-testing-only")
+	}
+	if err := auth.InitJWT(); err != nil {
+		log.Fatalf("Failed to initialize JWT for tests: %v", err)
+	}
 
 	// Apply authentication middleware
 	log.Println("Adding auth middleware...")
@@ -89,6 +99,14 @@ func TestMain(m *testing.M) {
 
 // setupRouter returns a fresh router for each test
 func setupRouter() *gin.Engine {
+	// Initialize JWT for tests if not already done
+	if os.Getenv("JWT_SECRET") == "" {
+		os.Setenv("JWT_SECRET", "test-jwt-secret-key-for-testing-only")
+	}
+	if err := auth.InitJWT(); err != nil {
+		log.Fatalf("Failed to initialize JWT for tests: %v", err)
+	}
+
 	// Create a new router for each test
 	router := gin.New()
 
@@ -564,6 +582,12 @@ func TestJWTExpiration(t *testing.T) {
 	router := setupRouter()
 	router.GET("/posts", middleware.RequireEditor(), GetPosts(svc))
 
+	// Get JWT secret from environment, fallback to test secret for tests
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "test-jwt-secret-key-for-testing-only"
+	}
+
 	// Create an expired token by setting expiration time to the past
 	expirationTime := time.Now().Add(-1 * time.Hour) // Set expiration to 1 hour ago
 	claims := &auth.Claims{
@@ -575,7 +599,7 @@ func TestJWTExpiration(t *testing.T) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	expiredToken, _ := token.SignedString([]byte("your-secret-key"))
+	expiredToken, _ := token.SignedString([]byte(jwtSecret))
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/posts", nil)

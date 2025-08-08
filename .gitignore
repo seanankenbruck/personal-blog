@@ -18,7 +18,7 @@ node_modules/
 # Go workspace file
 go.work
 
-# Environment files
+# Secrets and environment files
 .env
 .env.local
 .env.*.local
@@ -26,106 +26,10 @@ go.work
 .env.test
 .env.production
 
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS specific files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Log files
-*.log
-logs/
-
-# Build output
-dist/
-build/
-bin/
-
-# Temporary files
-tmp/
-temp/
-
-# Local development files
-*.local
-*.dev
-*.test
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Certificate files
-*.pem
-*.key
-*.cert
-*.crt
-
-# Backup files
-*.bak
-*.backup
-*.old
-
-# Cache directories
-.cache/
-__pycache__/
-
-# Coverage files
-coverage.txt
-coverage.html
-coverage.xml
-
-# Documentation
-docs/_build/
-site/
-
-# Generated files
-*.gen.go
-*.pb.go
-*.pb.gw.go
-*.swagger.json
-*.swagger.yaml
-
-# Test files
-_test.go
-_test.go~
-*.test
-*.test~
-*.out
-*.prof
-*.trace
-
-# Go specific
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool
-*.cover
-
-# Dependency directories
-vendor/
-
-# Go workspace file
-go.work
+# Generated secret files - these contain real secrets!
+manifests/secrets/generated-*
+**/generated-secrets.yaml
+**/generated-configmap.yaml
 
 # IDE specific files
 .idea/
@@ -176,6 +80,12 @@ temp/
 *.bak
 *.backup
 *.old
+
+# Backup files that may contain sensitive data
+backups/
+*.sql
+*.sql.gz
+*.dump
 
 # Cache directories
 .cache/

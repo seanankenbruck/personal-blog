@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -9,12 +10,23 @@ import (
 )
 
 var (
-	// Change this to a secure key in production
-	jwtKey = []byte("your-secret-key")
+	// JWT key loaded from environment variable
+	jwtKey []byte
 
 	ErrInvalidToken = errors.New("invalid token")
 	ErrExpiredToken = errors.New("token has expired")
+	ErrMissingJWTSecret = errors.New("JWT_SECRET environment variable is required")
 )
+
+// InitJWT initializes the JWT key from environment variable
+func InitJWT() error {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return ErrMissingJWTSecret
+	}
+	jwtKey = []byte(secret)
+	return nil
+}
 
 type Claims struct {
 	Username string      `json:"username"`
@@ -24,6 +36,10 @@ type Claims struct {
 
 // GenerateToken creates a new JWT token for a user
 func GenerateToken(username string, role domain.Role) (string, error) {
+	if jwtKey == nil {
+		return "", ErrMissingJWTSecret
+	}
+	
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
 		Username: username,
@@ -40,6 +56,10 @@ func GenerateToken(username string, role domain.Role) (string, error) {
 
 // ValidateToken validates the JWT token and returns the claims
 func ValidateToken(tokenString string) (*Claims, error) {
+	if jwtKey == nil {
+		return nil, ErrMissingJWTSecret
+	}
+	
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

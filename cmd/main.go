@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/seanankenbruck/blog/internal/auth"
 	"github.com/seanankenbruck/blog/internal/db"
 	"github.com/seanankenbruck/blog/internal/handler"
 	"github.com/seanankenbruck/blog/internal/middleware"
 	"github.com/seanankenbruck/blog/internal/repository"
 	"github.com/seanankenbruck/blog/internal/service"
-	"github.com/seanankenbruck/blog/internal/domain"
 )
 
 func main() {
@@ -33,6 +33,11 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
+	// Initialize JWT configuration
+	if err := auth.InitJWT(); err != nil {
+		log.Fatalf("Failed to initialize JWT: %v", err)
+	}
+
 	// Initialize repositories
 	postRepo := repository.NewPostgresPostRepository(db.DB)
 	userRepo := repository.NewUserRepository()
@@ -42,10 +47,6 @@ func main() {
 	postService := service.NewPostService(postRepo)
 	userService := service.NewUserService(userRepo)
 	subscriberService := service.NewSubscriberService(subscriberRepo)
-
-	// Seed initial editor user if not exists
-	admin := &domain.User{Username: "admin", Password: "Admin$trong1", Role: domain.Editor}
-	_ = userService.CreateUser(context.Background(), admin)
 
 	// Initialize handlers
 	postHandler := handler.NewPostHandler(postService)
@@ -87,6 +88,9 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 	public := r.Group("/")
 	{
 		public.GET("/", postHandler.HomePage)
+		public.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+		})
 		public.GET("/posts", postHandler.GetPosts)
 		public.GET("/posts/:slug", postHandler.GetPost)
 		public.GET("/about", handler.AboutPage())
