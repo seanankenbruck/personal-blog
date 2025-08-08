@@ -43,10 +43,6 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	subscriberService := service.NewSubscriberService(subscriberRepo)
 
-	// Seed initial editor user if not exists
-	admin := &domain.User{Username: "admin", Password: "Admin$trong1", Role: domain.Editor}
-	_ = userService.CreateUser(context.Background(), admin)
-
 	// Initialize handlers
 	postHandler := handler.NewPostHandler(postService)
 	userHandler := handler.NewUserHandler(userService)
