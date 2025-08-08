@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/seanankenbruck/blog/internal/auth"
 	"github.com/seanankenbruck/blog/internal/db"
 	"github.com/seanankenbruck/blog/internal/handler"
 	"github.com/seanankenbruck/blog/internal/middleware"
 	"github.com/seanankenbruck/blog/internal/repository"
 	"github.com/seanankenbruck/blog/internal/service"
-	"github.com/seanankenbruck/blog/internal/domain"
 )
 
 func main() {
@@ -31,6 +31,11 @@ func main() {
 	// Initialize database connection
 	if err := db.Init(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
+	}
+
+	// Initialize JWT configuration
+	if err := auth.InitJWT(); err != nil {
+		log.Fatalf("Failed to initialize JWT: %v", err)
 	}
 
 	// Initialize repositories
