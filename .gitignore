@@ -31,6 +31,9 @@ manifests/secrets/generated-*
 **/generated-secrets.yaml
 **/generated-configmap.yaml
 
+# AWS configuration files with sensitive data
+deploy/aws/configs/deployment.env
+
 # IDE specific files
 .idea/
 .vscode/

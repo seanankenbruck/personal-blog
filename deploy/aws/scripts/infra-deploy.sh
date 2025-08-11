@@ -5,15 +5,30 @@
 
 set -e  # Exit on any error
 
-# Configuration
-APP_NAME="personal-blog"
-ENVIRONMENT="production"
-AWS_REGION="us-east-1"
-DOMAIN_NAME="ankenbruckdevops.com"
-DB_NAME="blog_db"
-DB_USERNAME="blogadmin"
-# Update this with your actual SMTP password for email functionality
-SMTP_PASSWORD="your-smtp-password-here"
+# Load configuration from config file
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="${SCRIPT_DIR}/../configs/deployment.env"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: Configuration file not found: $CONFIG_FILE"
+    echo "Please copy deployment.env.template to deployment.env and update the values."
+    exit 1
+fi
+
+# Source the configuration file
+source "$CONFIG_FILE"
+
+# Validate required configuration
+if [ -z "$APP_NAME" ] || [ -z "$ENVIRONMENT" ] || [ -z "$AWS_REGION" ] || [ -z "$DOMAIN_NAME" ]; then
+    echo "Error: Missing required configuration values in $CONFIG_FILE"
+    echo "Please ensure APP_NAME, ENVIRONMENT, AWS_REGION, and DOMAIN_NAME are set."
+    exit 1
+fi
+
+# Set defaults for optional values
+DB_NAME="${DB_NAME:-blog_db}"
+DB_USERNAME="${DB_USERNAME:-blogadmin}"
+JWT_SECRET="${JWT_SECRET:-your-secret-key-here-change-in-production}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -733,7 +748,7 @@ EOF
         },
         {
           "name": "JWT_SECRET",
-          "value": "your-secret-key-here-change-in-production"
+          "value": "${JWT_SECRET}"
         },
         {
           "name": "SMTP_HOST",

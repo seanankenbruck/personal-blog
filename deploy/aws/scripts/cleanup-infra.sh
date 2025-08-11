@@ -1,17 +1,32 @@
 #!/bin/bash
 
 # AWS Infrastructure Cleanup Script
-# This script removes all resources created by the deployment script
-# Use with caution - this will delete everything!
+# This script cleans up AWS resources created by the deployment
 
 set -e  # Exit on any error
 
-# Configuration
-APP_NAME="personal-blog"
-ENVIRONMENT="production"
-AWS_REGION="us-east-1"
-AWS_PROFILE="infra-manager"
-DOMAIN_NAME="ankenbruckdevops.com"
+# Load configuration from config file
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="${SCRIPT_DIR}/../configs/deployment.env"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: Configuration file not found: $CONFIG_FILE"
+    echo "Please copy deployment.env.template to deployment.env and update the values."
+    exit 1
+fi
+
+# Source the configuration file
+source "$CONFIG_FILE"
+
+# Validate required configuration
+if [ -z "$APP_NAME" ] || [ -z "$ENVIRONMENT" ] || [ -z "$AWS_REGION" ] || [ -z "$DOMAIN_NAME" ]; then
+    echo "Error: Missing required configuration values in $CONFIG_FILE"
+    echo "Please ensure APP_NAME, ENVIRONMENT, AWS_REGION, and DOMAIN_NAME are set."
+    exit 1
+fi
+
+# Set defaults for optional values
+AWS_PROFILE="${AWS_PROFILE:-}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -53,10 +68,15 @@ check_prerequisites() {
         exit 1
     fi
     
-    # Test AWS profile
-    if ! aws sts get-caller-identity --profile "${AWS_PROFILE}" --region "${AWS_REGION}" &> /dev/null; then
-        error "AWS profile '${AWS_PROFILE}' not configured or invalid. Please check your credentials."
-        exit 1
+    # Test AWS credentials
+    if [ -n "$AWS_PROFILE" ]; then
+        if ! aws sts get-caller-identity --profile "${AWS_PROFILE}" --region "${AWS_REGION}" &> /dev/null; then
+            error "AWS profile '${AWS_PROFILE}' not configured or invalid. Please check your credentials."
+        fi
+    else
+        if ! aws sts get-caller-identity --region "${AWS_REGION}" &> /dev/null; then
+            error "AWS credentials not configured or invalid. Please run 'aws configure' first."
+        fi
     fi
     
     log "Prerequisites check passed!"
@@ -156,9 +176,14 @@ stop_ecs_service() {
 cleanup_ecr_repository() {
     log "Cleaning up ECR repository..."
     
+    # Build AWS CLI command with optional profile
+    AWS_CMD="aws"
+    if [ -n "$AWS_PROFILE" ]; then
+        AWS_CMD="aws --profile ${AWS_PROFILE}"
+    fi
+    
     # List all images in the repository
-    IMAGES=$(aws ecr list-images \
-        --profile "${AWS_PROFILE}" \
+    IMAGES=$(${AWS_CMD} ecr list-images \
         --region "${AWS_REGION}" \
         --repository-name "${APP_NAME}" \
         --query 'imageIds' \
@@ -167,8 +192,7 @@ cleanup_ecr_repository() {
     
     if [ "$IMAGES" != "[]" ] && [ "$IMAGES" != "" ]; then
         log "Deleting all images from ECR repository..."
-        aws ecr batch-delete-image \
-            --profile "${AWS_PROFILE}" \
+        ${AWS_CMD} ecr batch-delete-image \
             --region "${AWS_REGION}" \
             --repository-name "${APP_NAME}" \
             --image-ids "$IMAGES" \
