@@ -799,26 +799,39 @@ setup_dns() {
         --output text \
         --region "${AWS_REGION}")
     
-    echo "URLs:"
-    echo "  Load Balancer: http://${ALB_DNS_NAME}"
-    echo "  Domain: https://${DOMAIN_NAME}"
-    echo
-    echo "AWS Resources:"
-    echo "  ECS Cluster: ${APP_NAME}-cluster"
-    echo "  RDS Database: ${APP_NAME}-db"
-    echo "  ECR Repository: ${APP_NAME}"
-    echo
-    echo "Next Steps:"
-    echo "1. Validate SSL certificate in AWS Certificate Manager console"
-    echo "2. Ensure Route 53 hosted zone is properly configured"
-    echo "3. Test the application functionality"
-    echo "4. Set up monitoring and alerting"
-    echo
-    echo "Useful Commands:"
-    echo "  View ECS service: aws ecs describe-services --cluster ${APP_NAME}-cluster --services ${APP_NAME}-service"
-    echo "  View logs: aws logs describe-log-groups --log-group-name-prefix /ecs/${APP_NAME}"
-    echo "  Update service: aws ecs update-service --cluster ${APP_NAME}-cluster --service ${APP_NAME}-service --force-new-deployment"
-    echo
+    # Get ALB hosted zone ID
+    ALB_HOSTED_ZONE_ID=$(aws elbv2 describe-load-balancers \
+        --names "${APP_NAME}-alb" \
+        --region "${AWS_REGION}" \
+        --query 'LoadBalancers[0].CanonicalHostedZoneId' \
+        --output text)
+    
+    # Create Route 53 record
+    cat > dns-record.json << EOF
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "${DOMAIN_NAME}",
+        "Type": "A",
+        "AliasTarget": {
+          "DNSName": "${ALB_DNS_NAME}",
+          "EvaluateTargetHealth": false,
+          "HostedZoneId": "${ALB_HOSTED_ZONE_ID}"
+        }
+      }
+    }
+  ]
+}
+EOF
+    
+    aws route53 change-resource-record-sets \
+        --hosted-zone-id "${HOSTED_ZONE_ID}" \
+        --change-batch file://dns-record.json
+    
+    log "DNS record created successfully!"
+    rm -f dns-record.json
 }
 
 # Update existing deployment
@@ -938,8 +951,8 @@ main() {
             log "Starting full AWS deployment..."
             check_prerequisites
             #create_infrastructure
-            build_and_push_image
-            #deploy_ecs_service
+            #build_and_push_image
+            deploy_ecs_service
             #setup_ssl_certificate
             #setup_dns
             #health_check
@@ -994,45 +1007,6 @@ main() {
 # Trap to clean up temporary files on exit
 trap 'rm -f infrastructure.yaml task-definition.json trust-policy.json ssm-policy.json dns-record.json' EXIT
 
-# Run main function with all arguments
-main "$@"
-        --output text \
-        --region "${AWS_REGION}")
-    
-    ALB_HOSTED_ZONE_ID=$(aws elbv2 describe-load-balancers \
-        --names "${APP_NAME}-alb" \
-        --region "${AWS_REGION}" \
-        --query 'LoadBalancers[0].CanonicalHostedZoneId' \
-        --output text)
-    
-    # Create Route 53 record
-    cat > dns-record.json << EOF
-{
-  "Changes": [
-    {
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "${DOMAIN_NAME}",
-        "Type": "A",
-        "AliasTarget": {
-          "DNSName": "${ALB_DNS_NAME}",
-          "EvaluateTargetHealth": false,
-          "HostedZoneId": "${ALB_HOSTED_ZONE_ID}"
-        }
-      }
-    }
-  ]
-}
-EOF
-    
-    aws route53 change-resource-record-sets \
-        --hosted-zone-id "${HOSTED_ZONE_ID}" \
-        --change-batch file://dns-record.json
-    
-    log "DNS record created successfully!"
-    rm -f dns-record.json
-}
-
 # Health check function
 health_check() {
     log "Performing health check..."
@@ -1070,3 +1044,27 @@ display_info() {
     ALB_DNS_NAME=$(aws cloudformation describe-stacks \
         --stack-name "${APP_NAME}-infrastructure" \
         --query 'Stacks[0].Outputs[?OutputKey==`ALBDNSName`].OutputValue' \
+        --output text \
+        --region "${AWS_REGION}")
+
+    echo "URLs:"
+    echo "  Load Balancer: http://${ALB_DNS_NAME}"
+    echo "  Domain: https://${DOMAIN_NAME}"
+    echo
+    echo "AWS Resources:"
+    echo "  ECS Cluster: ${APP_NAME}-cluster"
+    echo "  RDS Database: ${APP_NAME}-db"
+    echo "  ECR Repository: ${APP_NAME}"
+    echo
+    echo "Next Steps:"
+    echo "1. Validate SSL certificate in AWS Certificate Manager console"
+    echo "2. Ensure Route 53 hosted zone is properly configured"
+    echo "3. Test the application functionality"
+    echo "4. Set up monitoring and alerting"
+    echo
+    echo "Useful Commands:"
+    echo "  View ECS service: aws ecs describe-services --cluster ${APP_NAME}-cluster --services ${APP_NAME}-service"
+    echo "  View logs: aws logs describe-log-groups --log-group-name-prefix /ecs/${APP_NAME}"
+    echo "  Update service: aws ecs update-service --cluster ${APP_NAME}-cluster --service ${APP_NAME}-service --force-new-deployment"
+    echo
+}
