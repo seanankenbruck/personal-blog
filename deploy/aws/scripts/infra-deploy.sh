@@ -12,6 +12,8 @@ AWS_REGION="us-east-1"
 DOMAIN_NAME="ankenbruckdevops.com"
 DB_NAME="blog_db"
 DB_USERNAME="blogadmin"
+# Update this with your actual SMTP password for email functionality
+SMTP_PASSWORD="your-smtp-password-here"
 
 # Colors for output
 RED='\033[0;31m'
@@ -98,6 +100,12 @@ check_availability_zones() {
 # Create infrastructure CloudFormation stack
 create_infrastructure() {
     log "Creating infrastructure with CloudFormation..."
+
+    # Check if stack exists, and if so skip this step
+    if aws cloudformation describe-stacks --stack-name "${APP_NAME}-infrastructure" &> /dev/null; then
+        log "Stack ${APP_NAME}-infrastructure already exists, skipping creation..."
+        return
+    fi
     
     # Check AZ availability first
     check_availability_zones
@@ -486,6 +494,16 @@ EOF
         --region "${AWS_REGION}"
     
     log "Database password stored in Parameter Store"
+    
+    # Store SMTP password in AWS Systems Manager Parameter Store
+    aws ssm put-parameter \
+        --name "/${APP_NAME}/${ENVIRONMENT}/smtp-password" \
+        --value "${SMTP_PASSWORD:-your-smtp-password-here}" \
+        --type "SecureString" \
+        --overwrite \
+        --region "${AWS_REGION}"
+    
+    log "SMTP password stored in Parameter Store"
 }
 
 # Build and push Docker image
@@ -532,6 +550,12 @@ build_and_push_image() {
 # Create ECS task definition and service
 deploy_ecs_service() {
     log "Deploying ECS service..."
+
+    # Check if service exists, and if so skip this step
+    # if aws ecs describe-services --cluster "${APP_NAME}-cluster" --services "${APP_NAME}-service" &> /dev/null; then
+    #     log "Service ${APP_NAME}-service already exists, skipping creation..."
+    #     return
+    # fi
     
     # Get values from CloudFormation stack
     ECR_URI=$(aws cloudformation describe-stacks \
@@ -577,7 +601,11 @@ deploy_ecs_service() {
         --region "${AWS_REGION}")
     
     # Create IAM role for ECS task execution
-    cat > trust-policy.json << 'EOF'
+    if ! aws iam get-role --role-name "${APP_NAME}-execution-role" &> /dev/null; then
+        log "Creating IAM execution role..."
+        
+        # Create trust policy (who can assume the role)
+        cat > trust-policy.json << 'EOF'
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -592,20 +620,8 @@ deploy_ecs_service() {
 }
 EOF
 
-    # Create execution role if it doesn't exist
-    if ! aws iam get-role --role-name "${APP_NAME}-execution-role" &> /dev/null; then
-        aws iam create-role \
-            --role-name "${APP_NAME}-execution-role" \
-            --assume-role-policy-document file://trust-policy.json \
-            --region "${AWS_REGION}"
-        
-        aws iam attach-role-policy \
-            --role-name "${APP_NAME}-execution-role" \
-            --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy \
-            --region "${AWS_REGION}"
-        
-        # Add SSM permissions for accessing database password
-        cat > ssm-policy.json << EOF
+        # Create permissions policy (what the role can do)
+        cat > execution-role-policy.json << EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -617,15 +633,42 @@ EOF
         "ssm:GetParameterByPath"
       ],
       "Resource": "arn:aws:ssm:${AWS_REGION}:*:parameter/${APP_NAME}/${ENVIRONMENT}/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:${AWS_REGION}:*:log-group:/ecs/${APP_NAME}*"
     }
   ]
 }
 EOF
+
+        # Create the role with trust policy
+        aws iam create-role \
+            --role-name "${APP_NAME}-execution-role" \
+            --assume-role-policy-document file://trust-policy.json \
+            --region "${AWS_REGION}"
         
+        # Attach the AWS managed policy for ECS task execution
+        aws iam attach-role-policy \
+            --role-name "${APP_NAME}-execution-role" \
+            --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy \
+            --region "${AWS_REGION}"
+        
+        # Attach our custom permissions policy
         aws iam put-role-policy \
             --role-name "${APP_NAME}-execution-role" \
-            --policy-name "SSMParameterAccess" \
-            --policy-document file://ssm-policy.json
+            --policy-name "ParameterAccessAndLogStreamCreation" \
+            --policy-document file://execution-role-policy.json \
+            --region "${AWS_REGION}"
+        
+        log "IAM execution role created successfully!"
+    else
+        log "IAM execution role already exists, skipping creation"
     fi
     
     # Get AWS account ID for role ARN
@@ -669,14 +712,66 @@ EOF
           "value": "${DB_NAME}"
         },
         {
+          "name": "DB_SSLMODE",
+          "value": "require"
+        },
+        {
+          "name": "DB_CONNECT_TIMEOUT",
+          "value": "30"
+        },
+        {
+          "name": "DB_MAX_OPEN_CONNS",
+          "value": "25"
+        },
+        {
+          "name": "DB_MAX_IDLE_CONNS",
+          "value": "5"
+        },
+        {
           "name": "SERVER_PORT",
           "value": "8080"
+        },
+        {
+          "name": "JWT_SECRET",
+          "value": "your-secret-key-here-change-in-production"
+        },
+        {
+          "name": "SMTP_HOST",
+          "value": "smtp.gmail.com"
+        },
+        {
+          "name": "SMTP_PORT",
+          "value": "587"
+        },
+        {
+          "name": "SMTP_USER",
+          "value": "your-email@gmail.com"
+        },
+        {
+          "name": "EMAIL_SENDER",
+          "value": "your-email@gmail.com"
+        },
+        {
+          "name": "APP_HOST",
+          "value": "https://${DOMAIN_NAME}"
+        },
+        {
+          "name": "GIN_MODE",
+          "value": "release"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "debug"
         }
       ],
       "secrets": [
         {
           "name": "DB_PASSWORD",
           "valueFrom": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/${APP_NAME}/${ENVIRONMENT}/db-password"
+        },
+        {
+          "name": "SMTP_PASS",
+          "valueFrom": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/${APP_NAME}/${ENVIRONMENT}/smtp-password"
         }
       ],
       "logConfiguration": {
@@ -711,8 +806,13 @@ EOF
     
     log "ECS service deployed successfully!"
     
+    # Provide debugging information
+    log "To debug container issues, check the ECS task logs:"
+    log "aws logs tail /ecs/${APP_NAME} --follow --region ${AWS_REGION}"
+    log "Or check the ECS console for task details and logs."
+    
     # Clean up temporary files
-    rm -f trust-policy.json ssm-policy.json task-definition.json
+    rm -f trust-policy.json execution-role-policy.json task-definition.json
 }
 
 # Configure SSL certificate
@@ -953,7 +1053,7 @@ main() {
             log "Starting full AWS deployment..."
             check_prerequisites
             create_infrastructure
-            build_and_push_image
+            # build_and_push_image
             deploy_ecs_service
             #setup_ssl_certificate
             #setup_dns
@@ -965,6 +1065,10 @@ main() {
             check_prerequisites
             update_deployment
             health_check
+            ;;
+        "build")
+            log "Rebuilding docker image..."
+            build_and_push_image
             ;;
         "cleanup")
             log "Starting cleanup..."
@@ -1007,7 +1111,7 @@ main() {
 }
 
 # Trap to clean up temporary files on exit
-trap 'rm -f infrastructure.yaml task-definition.json trust-policy.json ssm-policy.json dns-record.json' EXIT
+trap 'rm -f infrastructure.yaml task-definition.json trust-policy.json execution-role-policy.json dns-record.json' EXIT
 
 # Run main function with all arguments
 main "$@"
