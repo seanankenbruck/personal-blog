@@ -552,15 +552,15 @@ deploy_ecs_service() {
         --output text \
         --region "${AWS_REGION}")
     
-    PRIVATE_SUBNET_1=$(aws cloudformation describe-stacks \
+    PUBLIC_SUBNET_1=$(aws cloudformation describe-stacks \
         --stack-name "${APP_NAME}-infrastructure" \
-        --query 'Stacks[0].Outputs[?OutputKey==`PrivateSubnet1Id`].OutputValue' \
+        --query 'Stacks[0].Outputs[?OutputKey==`PublicSubnet1Id`].OutputValue' \
         --output text \
         --region "${AWS_REGION}")
     
-    PRIVATE_SUBNET_2=$(aws cloudformation describe-stacks \
+    PUBLIC_SUBNET_2=$(aws cloudformation describe-stacks \
         --stack-name "${APP_NAME}-infrastructure" \
-        --query 'Stacks[0].Outputs[?OutputKey==`PrivateSubnet2Id`].OutputValue' \
+        --query 'Stacks[0].Outputs[?OutputKey==`PublicSubnet2Id`].OutputValue' \
         --output text \
         --region "${AWS_REGION}")
     
@@ -613,7 +613,8 @@ EOF
       "Effect": "Allow",
       "Action": [
         "ssm:GetParameter",
-        "ssm:GetParameters"
+        "ssm:GetParameters",
+        "ssm:GetParameterByPath"
       ],
       "Resource": "arn:aws:ssm:${AWS_REGION}:*:parameter/${APP_NAME}/${ENVIRONMENT}/*"
     }
@@ -704,7 +705,7 @@ EOF
         --task-definition "${APP_NAME}-task" \
         --desired-count 2 \
         --launch-type FARGATE \
-        --network-configuration "awsvpcConfiguration={subnets=[${PRIVATE_SUBNET_1},${PRIVATE_SUBNET_2}],securityGroups=[${ECS_SECURITY_GROUP}],assignPublicIp=DISABLED}" \
+        --network-configuration "awsvpcConfiguration={subnets=[${PUBLIC_SUBNET_1},${PUBLIC_SUBNET_2}],securityGroups=[${ECS_SECURITY_GROUP}],assignPublicIp=ENABLED}" \
         --load-balancers "targetGroupArn=${TARGET_GROUP_ARN},containerName=${APP_NAME},containerPort=8080" \
         --region "${AWS_REGION}" || warn "Service may already exist, continuing..."
     
@@ -948,10 +949,11 @@ show_logs() {
 main() {
     case "${1:-deploy}" in
         "deploy")
+            
             log "Starting full AWS deployment..."
             check_prerequisites
-            #create_infrastructure
-            #build_and_push_image
+            create_infrastructure
+            build_and_push_image
             deploy_ecs_service
             #setup_ssl_certificate
             #setup_dns
@@ -1006,6 +1008,9 @@ main() {
 
 # Trap to clean up temporary files on exit
 trap 'rm -f infrastructure.yaml task-definition.json trust-policy.json ssm-policy.json dns-record.json' EXIT
+
+# Run main function with all arguments
+main "$@"
 
 # Health check function
 health_check() {
