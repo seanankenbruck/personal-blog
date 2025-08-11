@@ -119,7 +119,8 @@ stop_ecs_service() {
         --region "${AWS_REGION}" \
         --stack-name "${APP_NAME}-infrastructure" \
         --query 'Stacks[0].Outputs[?OutputKey==`ECSClusterName`].OutputValue' \
-        --output text 2>/dev/null || echo "")
+        --output json \
+        --no-cli-pager 2>/dev/null || echo "[]")
     
     if [ ! -z "$CLUSTER_NAME" ] && [ "$CLUSTER_NAME" != "None" ]; then
         log "Found ECS cluster: ${CLUSTER_NAME}"
@@ -161,7 +162,8 @@ cleanup_ecr_repository() {
         --region "${AWS_REGION}" \
         --repository-name "${APP_NAME}" \
         --query 'imageIds' \
-        --output json 2>/dev/null || echo "[]")
+        --output json \
+        --no-cli-pager 2>/dev/null || echo "[]")
     
     if [ "$IMAGES" != "[]" ] && [ "$IMAGES" != "" ]; then
         log "Deleting all images from ECR repository..."
@@ -170,7 +172,7 @@ cleanup_ecr_repository() {
             --region "${AWS_REGION}" \
             --repository-name "${APP_NAME}" \
             --image-ids "$IMAGES" \
-            2>/dev/null || warn "Could not delete some ECR images"
+            --no-cli-pager 2>/dev/null || warn "Could not delete some ECR images"
     fi
     
     # The ECR repository itself will be deleted by CloudFormation
