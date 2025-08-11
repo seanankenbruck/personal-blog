@@ -488,57 +488,12 @@ EOF
     log "Database password stored in Parameter Store"
 }
 
-# Create Dockerfile if it doesn't exist
-create_dockerfile() {
-    if [ ! -f "Dockerfile" ]; then
-        log "Creating Dockerfile..."
-        cat > Dockerfile << 'EOF'
-# Build stage
-FROM golang:1.24.5-alpine AS builder
-
-WORKDIR /app
-
-# Copy go mod files
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy source code
-COPY . .
-
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o main cmd/main.go
-
-# Runtime stage
-FROM alpine:latest
-
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates tzdata
-
-WORKDIR /root/
-
-# Copy binary from builder
-COPY --from=builder /app/main .
-COPY --from=builder /app/templates ./templates
-COPY --from=builder /app/static ./static
-
-# Create uploads directory
-RUN mkdir -p static/uploads
-
-# Expose port
-EXPOSE 8080
-
-# Run the binary
-CMD ["./main"]
-EOF
-        log "Dockerfile created successfully!"
-    else
-        log "Dockerfile already exists, skipping creation"
-    fi
-}
-
 # Build and push Docker image
 build_and_push_image() {
     log "Building and pushing Docker image..."
+
+    # Store (date +%Y%m%d-%H%M%S) for image tag
+    IMAGE_TAG=$(date +%Y%m%d-%H%M%S)
     
     # Get ECR repository URI from CloudFormation stack
     ECR_URI=$(aws cloudformation describe-stacks \
@@ -564,12 +519,12 @@ build_and_push_image() {
     
     # Tag the image
     docker tag "${APP_NAME}:latest" "${ECR_URI}:latest"
-    docker tag "${APP_NAME}:latest" "${ECR_URI}:$(date +%Y%m%d-%H%M%S)"
+    docker tag "${APP_NAME}:latest" "${ECR_URI}:${IMAGE_TAG}"
     
     # Push the image
     log "Pushing Docker image to ECR..."
     docker push "${ECR_URI}:latest"
-    docker push "${ECR_URI}:$(date +%Y%m%d-%H%M%S)"
+    docker push "${ECR_URI}:${IMAGE_TAG}"
     
     log "Docker image pushed successfully!"
 }
@@ -982,14 +937,13 @@ main() {
         "deploy")
             log "Starting full AWS deployment..."
             check_prerequisites
-            create_dockerfile
-            create_infrastructure
+            #create_infrastructure
             build_and_push_image
-            deploy_ecs_service
-            setup_ssl_certificate
-            setup_dns
-            health_check
-            display_info
+            #deploy_ecs_service
+            #setup_ssl_certificate
+            #setup_dns
+            #health_check
+            #display_info
             ;;
         "update")
             log "Starting deployment update..."
