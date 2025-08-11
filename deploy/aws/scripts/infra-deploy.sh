@@ -122,42 +122,18 @@ Parameters:
     Type: String
     NoEcho: true
     Description: Database password
-
-Conditions:
-  HasMultipleAZs: !Not 
-    - !Equals 
-      - !Select [1, !GetAZs !Ref AWS::Region]
-      - !Select [0, !GetAZs !Ref AWS::Region]
-
-Resources:
-  # VPC and Networking
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-      EnableDnsHostnames: true
-      EnableDnsSupport: true
-      Tags:
-        - Key: Name
-          Value: !Sub "${AppName}-vpc"
-
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Infrastructure for Sean Blog Application'
-
-Parameters:
-  AppName:
+  AZ1:
     Type: String
-    Default: sean-blog
-  Environment:
+    Default: us-east-1a
+    AllowedValues:
+      - us-east-1a
+      - us-east-1b
+  AZ2:
     Type: String
-    Default: production
-  DomainName:
-    Type: String
-    Default: ankenbruckdevops.com
-  DBPassword:
-    Type: String
-    NoEcho: true
-    Description: Database password
+    Default: us-east-1c
+    AllowedValues:
+      - us-east-1c
+      - us-east-1d
 
 Resources:
   # VPC and Networking
@@ -176,7 +152,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.0.1.0/24
-      AvailabilityZone: !Select [0, !GetAZs '']
+      AvailabilityZone: !Ref AZ1
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
@@ -187,7 +163,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.0.2.0/24
-      AvailabilityZone: !Select [1, !GetAZs '']
+      AvailabilityZone: !Ref AZ2
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
@@ -198,7 +174,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.0.3.0/24
-      AvailabilityZone: !Select [0, !GetAZs '']
+      AvailabilityZone: !Ref AZ1
       Tags:
         - Key: Name
           Value: !Sub "${AppName}-private-subnet-1"
@@ -208,7 +184,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.0.4.0/24
-      AvailabilityZone: !Select [1, !GetAZs '']
+      AvailabilityZone: !Ref AZ2
       Tags:
         - Key: Name
           Value: !Sub "${AppName}-private-subnet-2"
@@ -319,7 +295,7 @@ Resources:
       DBInstanceIdentifier: !Sub "${AppName}-db"
       DBInstanceClass: db.t3.micro
       Engine: postgres
-      EngineVersion: '14.9'
+      EngineVersion: '16.9'
       MasterUsername: blogadmin
       MasterUserPassword: !Ref DBPassword
       DBName: blog
