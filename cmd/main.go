@@ -41,20 +41,17 @@ func main() {
 	// Initialize repositories
 	postRepo := repository.NewPostgresPostRepository(db.DB)
 	userRepo := repository.NewUserRepository()
-	subscriberRepo := repository.NewPostgresSubscriberRepository(db.DB)
 
 	// Initialize services
 	postService := service.NewPostService(postRepo)
 	userService := service.NewUserService(userRepo)
-	subscriberService := service.NewSubscriberService(subscriberRepo)
 
 	// Initialize handlers
 	postHandler := handler.NewPostHandler(postService)
 	userHandler := handler.NewUserHandler(userService)
-	subscriberHandler := handler.NewSubscriberHandler(subscriberService)
 
 	// Set up routes
-	setupRoutes(r, postHandler, userHandler, subscriberHandler)
+	setupRoutes(r, postHandler, userHandler)
 
 	// Start server
 	if err := r.Run(":8080"); err != nil {
@@ -62,7 +59,7 @@ func main() {
 	}
 }
 
-func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *handler.UserHandler, subscriberHandler *handler.SubscriberHandler) {
+func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *handler.UserHandler) {
 	// Add context timeout middleware
 	r.Use(func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
@@ -87,23 +84,18 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 	// Public routes
 	public := r.Group("/")
 	{
-		public.GET("/", postHandler.HomePage)
+		public.GET("/", handler.PortfolioPage())
 		public.GET("/health", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 		})
+		public.GET("/blog", postHandler.GetPosts)
 		public.GET("/posts", postHandler.GetPosts)
 		public.GET("/posts/:slug", postHandler.GetPost)
-		public.GET("/about", handler.AboutPage())
 		public.GET("/portfolio", handler.PortfolioPage())
-		public.GET("/contact", handler.ContactPage())
-		public.POST("/contact", handler.SubmitContact())
 		public.GET("/login", handler.LoginPage())
 		public.POST("/login", userHandler.Login)
 		public.GET("/logout", userHandler.Logout)
 		public.POST("/preview", postHandler.PreviewMarkdown())
-		public.POST("/subscribe", subscriberHandler.Subscribe)
-		public.GET("/confirm", subscriberHandler.ConfirmSubscription)
-		public.POST("/unsubscribe", subscriberHandler.Unsubscribe)
 	}
 
 	// Protected routes
@@ -116,6 +108,5 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 		editor.PUT("/posts/:slug", postHandler.UpdatePost)
 		editor.DELETE("/posts/:slug", postHandler.DeletePost)
 		editor.POST("/upload", postHandler.UploadImage)
-		editor.GET("/subscribers", subscriberHandler.ListSubscribers)
 	}
 }

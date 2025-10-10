@@ -13,9 +13,9 @@
     <nav class="navbar">
         <div class="container">
             <div class="nav-links">
-                <a href="/" class="nav-link">Home</a>
+                <!-- <a href="/" class="nav-link">Home</a>
                 <a href="/portfolio" class="nav-link">Portfolio</a>
-                <a href="/contact" class="nav-link">Contact</a>
+                <a href="/contact" class="nav-link">Contact</a> -->
             </div>
         </div>
     </nav>
@@ -25,17 +25,17 @@
             <section id="hero">
         <h1>Hi, I'm Sean</h1>
         <p>Software Engineer specializing in designing, building, and implementing cloud-native systems.
-            I am an advocate of observability and open source software and hope this blog can be a resource for you.</p>
+            I am an advocate of observability and open source software. This blog is a hobby project, and
+            hope that it can be a resource for you.</p>
     </section>
 
     <section id="skills">
         <h2>Technical Skills</h2>
         <div class="skills">
-            <div class="skill-chip">Kubernetes</div>
-            <div class="skill-chip">Software Development</div>
-            <div class="skill-chip">Containerized Applications</div>
             <div class="skill-chip">Architecture Design</div>
+            <div class="skill-chip">Containerized Applications</div>
             <div class="skill-chip">Cloud Native Development</div>
+            <div class="skill-chip">Software Development</div>
             <div class="skill-chip">Observability</div>
         </div>
     </section>
@@ -44,44 +44,86 @@
         <h2>Featured Projects</h2>
         <div class="project-grid">
             <div class="project-card">
-                <h3><a href="#">Sample Project One</a></h3>
-                <p>A brief description of project one.</p>
-                <p>Go • Gin • PostgreSQL</p>
+                <h3><a href="#">Personal Website</a></h3>
+                <p>This web application was entirely built from scratch using Go, Gin, and PostgreSQL.
+                The application is fully instrumented with OpenTelemetry and telemetry data is streamed to
+                a managed observability platform.
+                </p>
+                <p>Go • Gin • PostgreSQL • OpenTelemetry</p>
             </div>
             <div class="project-card">
-                <h3><a href="#">Sample Project Two</a></h3>
-                <p>A brief description of project two.</p>
-                <p>React • Tailwind • Node.js</p>
+                <h3><a href="#"></a>Bare Metal Kubernetes Cluster</h3>
+                <p>This is a bare metal Kubernetes cluster running 3 nodes on Raspberry Pi units.
+                    It is used to deploy and manage the personal website and other applications in development.
+                </p>
+                <p>Kubernetes • Docker • Linux • Raspberry Pi</p>
+            </div>
+            <div class="project-card">
+                <h3><a href="#"></a>AI-Powered Observability Platform</h3>
+                <p>The intent of this project is to build a robust observability solution that
+                    leverages AI tools to translate natural language into functional queries of telemetry data.
+                </p>
+                <p>Go • Gin • React • OpenAI • Prometheus</p>
             </div>
         </div>
     </section>
 
     <section id="resume">
         <h2>Resume Highlights</h2>
-        <h3>Coming soon...</h3>
-        <!-- <ul class="timeline">
+        <ul class="timeline">
             <li class="timeline-item">
-                <span class="timeline-year">2023</span>
+                <span class="timeline-year">September 2024 - Present</span>
                 <div class="timeline-content">
-                    <h3>Senior Software Engineer, Acme Inc.</h3>
-                    <p>Built a Kubernetes-based microservices platform in Go.</p>
+                    <h3>Senior Software Engineer - Cariad, Inc.</h3>
+                    <p>Responsible for researching, designing, implementing, and managing observability solutions
+                        that can be consumed and utilized by thousands of internal and partner developers. Developed an
+                        end to end observability platform using open source solutions including OpenTelemetry, Grafana,
+                        Loki, Tempo, and Mimir.
+                    </p>
                 </div>
             </li>
             <li class="timeline-item">
-                <span class="timeline-year">2021</span>
+                <span class="timeline-year">August 2022 - September 2024</span>
                 <div class="timeline-content">
-                    <h3>Software Engineer, Beta Corp.</h3>
-                    <p>Developed a real-time analytics dashboard with React.</p>
+                    <h3>Senior Cloud Solution Engineer, Cariad, Inc.</h3>
+                    <p>
+                        Lead the design and development of customer-facing
+                        applications and processes, providing technical solutions to
+                        optimize workflows and bridge operational gaps. Built and deployed distributed software solutions
+                        including microservices, APIs, and web applications, on Azure cloud using various
+                        technologies and programming languages.
+                    </p>
                 </div>
             </li>
-        </ul> -->
-        <a href="/static/Sean-Ankenbruck-Resume.pdf" class="btn">Download Full Resume (PDF)</a>
+            <li class="timeline-item">
+                <span class="timeline-year">January 2022 - August 2022</span>
+                <div class="timeline-content">
+                    <h3>Senior Solutions Engineer, Groundspeed Analytics.</h3>
+                    <p>
+                        Partnered with cross-functional teams to build and continuously
+                        improve the overall product offering for our customers. Designed and
+                        implemented solutions that allowed customers
+                        to interface directly with our products.
+                    </p>
+                </div>
+            </li>
+            <li class="timeline-item">
+                <span class="timeline-year">May 2017 - December 2021</span>
+                <div class="timeline-content">
+                    <h3>Senior Solutions Architect, Zencos Consulting LLC.</h3>
+                    <p>
+                        Developed solutions for customers, incorporating cloud infrastructure,
+                        data analytics tools, ETL processes, data visualizations, APIs, automated
+                        workflows, and web applications. Worked with the internal cloud team to continuously improve
+                        our existing cloud infrastructure and implement cloud
+                        computing best practices.
+                    </p>
+                </div>
+            </li>
+        </ul>
+        <a href="/static/files/Sean-Ankenbruck-Resume.pdf" class="btn" target="_blank" rel="noopener" download>Download Full Resume (PDF)</a>
     </section>
 
-            <section id="contact-cta">
-                <h2>Want to collaborate?</h2>
-                <a href="/contact" class="btn">Get in Touch</a>
-            </section>
         </div>
     </main>
 

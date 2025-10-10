@@ -42,7 +42,7 @@ func Init() error {
 	DB = db
 
 	// AutoMigrate domain models
-	if err := DB.AutoMigrate(&domain.User{}, &domain.Post{}, &domain.Subscriber{}); err != nil {
+	if err := DB.AutoMigrate(&domain.User{}, &domain.Post{}); err != nil {
 		return fmt.Errorf("failed to auto-migrate models: %w", err)
 	}
 
