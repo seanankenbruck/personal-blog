@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sean Ankenbruck Blog</title>
+    <title>Sean Ankenbruck</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,10 +13,9 @@
     <nav class="navbar">
         <div class="container">
             <div class="nav-links">
-                <a href="/" class="nav-link">Home</a>
-                <a href="/portfolio" class="nav-link">Portfolio</a>
-                <a href="/contact" class="nav-link">Contact</a>
-                <!-- {{if .User}}
+                <a href="/" class="nav-link">Portfolio</a>
+                <!-- <a href="/blog" class="nav-link">Blog</a>
+                {{if .User}}
                     <span style="color: white; margin-left: auto;">Logged in as {{.User.Username}} ({{.User.Role}})</span>
                     <a href="/logout" class="nav-link">Logout</a>
                 {{else}}
@@ -28,7 +27,7 @@
 
     <main>
         <div class="container">
-            <h1>Welcome to my blog</h1>
+            <h1>Blog Posts</h1>
 
             <div class="posts">
         {{range .Posts}}
@@ -56,15 +55,6 @@
             {{if isEditor .User}}
             <a href="/posts/new" class="btn">Create New Post</a>
             {{end}}
-
-            <!-- Subscription form -->
-            <div class="subscribe-box">
-                <h2>Subscribe for Updates</h2>
-                <form action="/subscribe" method="POST">
-                    <input type="email" name="email" placeholder="Enter your email" required>
-                    <button type="submit" class="btn">Subscribe</button>
-                </form>
-            </div>
         </div>
     </main>
 

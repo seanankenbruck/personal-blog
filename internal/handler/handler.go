@@ -5,14 +5,10 @@ import (
 	"strings"
 	"time"
 	"context"
-	// "strconv"
 
-	//"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/seanankenbruck/blog/internal/domain"
 	"github.com/seanankenbruck/blog/internal/auth"
-	"log"
-	//"encoding/json"
 	"html/template"
 	"path/filepath"
 	"github.com/gomarkdown/markdown"
@@ -268,38 +264,6 @@ func PortfolioPage() gin.HandlerFunc {
 			"Title": "Portfolio",
 			"Year": time.Now().Year(),
 			"User":  user,
-		})
-	}
-}
-
-func ContactPage() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userVal, _ := c.Get("user")
-		user, _ := userVal.(*domain.User)
-		c.HTML(http.StatusOK, "contact.html", gin.H{
-			"Title": "Contact",
-			"Year": time.Now().Year(),
-			"User":  user,
-		})
-	}
-}
-
-// SubmitContact handles the contact form submission
-func SubmitContact() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		email := c.PostForm("email")
-		job := c.PostForm("job")
-		message := c.PostForm("message")
-		// TODO: send email notification here
-		log.Printf("Contact form submitted: email=%s, job=%s, message=%s", email, job, message)
-
-		userVal, _ := c.Get("user")
-		user, _ := userVal.(*domain.User)
-		c.HTML(http.StatusOK, "contact.html", gin.H{
-			"Title":   "Contact",
-			"Year":    time.Now().Year(),
-			"Success": "Thank you for your message! I will get back to you soon.",
-			"User":    user,
 		})
 	}
 }
@@ -595,136 +559,3 @@ func UploadImage() gin.HandlerFunc {
 	}
 }
 
-// SubscriberHandler handles subscriber-related HTTP requests
-type SubscriberHandler struct {
-	subscriberService domain.SubscriberService
-}
-
-// NewSubscriberHandler creates a new SubscriberHandler
-func NewSubscriberHandler(subscriberService domain.SubscriberService) *SubscriberHandler {
-	return &SubscriberHandler{subscriberService: subscriberService}
-}
-
-// Subscribe handles new subscription requests
-func (h *SubscriberHandler) Subscribe(c *gin.Context) {
-	ctx := c.Request.Context()
-	var email string
-	if c.ContentType() == "application/json" {
-		var req struct{ Email string `json:"email"` }
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-			return
-		}
-		email = req.Email
-	} else {
-		email = c.PostForm("email")
-	}
-
-	subscriber, err := h.subscriberService.Subscribe(ctx, email)
-	if err != nil {
-		accept := c.GetHeader("Accept")
-		if err == domain.ErrSubscriberExists {
-			if strings.Contains(accept, "text/html") || c.ContentType() == "application/x-www-form-urlencoded" {
-				c.HTML(http.StatusConflict, "subscribe_exists.html", gin.H{"Email": email})
-				return
-			}
-			c.JSON(http.StatusConflict, gin.H{"error": "You are already subscribed."})
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		}
-		return
-	}
-
-	// TODO: Send confirmation email with subscriber.ConfirmationToken
-
-	// Support both HTML and JSON responses
-	accept := c.GetHeader("Accept")
-	if strings.Contains(accept, "text/html") {
-		c.HTML(http.StatusOK, "subscribe_success.html", gin.H{
-			"Title": "Subscribed!",
-			"Year": time.Now().Year(),
-			"Email": subscriber.Email,
-		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "Subscription successful. Please check your email to confirm.", "email": subscriber.Email})
-	}
-}
-
-// ConfirmSubscription handles subscription confirmation
-func (h *SubscriberHandler) ConfirmSubscription(c *gin.Context) {
-	token := c.Query("token")
-	if token == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing confirmation token"})
-		return
-	}
-	ctx := c.Request.Context()
-	err := h.subscriberService.ConfirmSubscription(ctx, token)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	accept := c.GetHeader("Accept")
-	if strings.Contains(accept, "text/html") {
-		c.HTML(http.StatusOK, "confirm_success.html", gin.H{
-			"Title": "Subscription Confirmed",
-			"Year": time.Now().Year(),
-		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "Subscription confirmed."})
-	}
-}
-
-// Unsubscribe handles unsubscribe requests
-func (h *SubscriberHandler) Unsubscribe(c *gin.Context) {
-	ctx := c.Request.Context()
-	var email string
-	if c.ContentType() == "application/json" {
-		var req struct{ Email string `json:"email"` }
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-			return
-		}
-		email = req.Email
-	} else {
-		email = c.PostForm("email")
-	}
-
-	err := h.subscriberService.Unsubscribe(ctx, email)
-	if err != nil {
-		if err == domain.ErrSubscriberNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Subscriber not found."})
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		}
-		return
-	}
-	accept := c.GetHeader("Accept")
-	if strings.Contains(accept, "text/html") {
-		c.HTML(http.StatusOK, "unsubscribe_success.html", gin.H{
-			"Title": "Unsubscribed",
-			"Year": time.Now().Year(),
-		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "You have been unsubscribed."})
-	}
-}
-
-// ListSubscribers handles requests to list all subscribers
-func (h *SubscriberHandler) ListSubscribers(c *gin.Context) {
-	ctx := c.Request.Context()
-	subscribers, err := h.subscriberService.ListSubscribers(ctx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	accept := c.GetHeader("Accept")
-	if strings.Contains(accept, "text/html") {
-		c.HTML(http.StatusOK, "subscribers.html", gin.H{
-			"Title": "Subscribers",
-			"Year": time.Now().Year(),
-			"Subscribers": subscribers,
-		})
-	} else {
-		c.JSON(http.StatusOK, subscribers)
-	}
-}

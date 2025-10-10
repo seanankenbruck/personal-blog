@@ -13,9 +13,14 @@
     <nav class="navbar">
         <div class="container">
             <div class="nav-links">
-                <a href="/" class="nav-link">Home</a>
-                <a href="/portfolio" class="nav-link">Portfolio</a>
-                <a href="/contact" class="nav-link">Contact</a>
+                <a href="/" class="nav-link">Portfolio</a>
+                <!-- <a href="/blog" class="nav-link">Blog</a>
+                {{if .User}}
+                    <span style="color: white; margin-left: auto;">Logged in as {{.User.Username}} ({{.User.Role}})</span>
+                    <a href="/logout" class="nav-link">Logout</a>
+                {{else}}
+                    <a href="/login" class="nav-link" style="margin-left: auto;">Login</a>
+                {{end}} -->
             </div>
         </div>
     </nav>
@@ -78,10 +83,6 @@
         <a href="/static/Sean-Ankenbruck-Resume.pdf" class="btn">Download Full Resume (PDF)</a>
     </section>
 
-            <section id="contact-cta">
-                <h2>Want to collaborate?</h2>
-                <a href="/contact" class="btn">Get in Touch</a>
-            </section>
         </div>
     </main>
 
