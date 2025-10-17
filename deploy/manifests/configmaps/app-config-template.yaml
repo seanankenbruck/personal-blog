@@ -4,17 +4,6 @@ metadata:
   name: blog-config
   namespace: blog-app
 data:
-  DB_HOST: "postgres-service"
-  DB_PORT: "5432"
-  DB_USER: "postgres"
-  DB_NAME: "blog"
-  DB_SSLMODE: "disable"
-  REDIS_HOST: "redis-service"
-  REDIS_PORT: "6379"
   SERVER_PORT: "8080"
   GIN_MODE: "release"
-  APP_HOST: "https://your-domain.com"  # Update with your domain
-  SMTP_HOST: ""
-  SMTP_PORT: "587"
-  SMTP_USER: ""
-  EMAIL_SENDER: ""
+  CONTENT_DIR: "/content/posts"

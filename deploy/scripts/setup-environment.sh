@@ -1,6 +1,5 @@
-
 #!/bin/bash
-# scripts/setup-environment.sh - Initial environment setup
+# scripts/setup-environment.sh - Initial environment setup for static content blog
 
 set -e
 
@@ -13,17 +12,8 @@ DOCKER_NAMESPACE=yourusername
 
 # Application Configuration
 APP_DOMAIN=your-domain.com
-JWT_SECRET=your-jwt-secret-key
-
-# Database Configuration
-DB_PASSWORD=secure-postgres-password
-
-# Email Configuration (optional)
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASSWORD=
-EMAIL_SENDER=
+GIN_MODE=release
+CONTENT_DIR=/content/posts
 
 # SSL/TLS Configuration
 CERT_MANAGER_EMAIL=your-email@domain.com

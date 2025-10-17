@@ -3,8 +3,7 @@
 .gitignore
 .gitattributes
 
-# Documentation
-README.md
+# Documentation (keep README.md for Docker context)
 *.md
 docs/
 LICENSE
@@ -43,6 +42,7 @@ coverage/
 bin/
 dist/
 build/
+blog
 
 # Dependencies (if any)
 node_modules/
@@ -66,7 +66,13 @@ docker-compose*.yml
 # Backup files
 *.bak
 *.backup
+backups/
 
 # Cache directories
 .cache/
 cache/
+
+# Go specific
+*.prof
+*.trace
+*.cover

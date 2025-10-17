@@ -21,6 +21,7 @@ COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 COPY static/ ./static/
 COPY templates/ ./templates/
+COPY content/ ./content/
 
 # Build the application with optimizations
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
@@ -44,9 +45,10 @@ COPY --from=builder /etc/passwd /etc/passwd
 # Copy the binary
 COPY --from=builder /app/main /main
 
-# Copy static files and templates
+# Copy static files, templates, and content
 COPY --from=builder /app/static /static
 COPY --from=builder /app/templates /templates
+COPY --from=builder /app/content /content
 
 # Use non-root user
 USER appuser

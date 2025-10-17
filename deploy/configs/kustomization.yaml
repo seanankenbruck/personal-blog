@@ -6,11 +6,8 @@ namespace: blog-app
 
 resources:
 - ../manifests/namespace.yaml
-- ../manifests/storage/
 - ../manifests/secrets/
 - ../manifests/configmaps/
-- ../manifests/database/
-- ../manifests/cache/
 - ../manifests/application/
 - ../manifests/ingress/
 

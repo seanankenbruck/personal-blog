@@ -1,5 +1,5 @@
 #!/bin/bash
-# scripts/deploy.sh - Main deployment script
+# scripts/deploy.sh - Main deployment script for static content blog
 
 set -e
 
@@ -38,34 +38,10 @@ echo "✅ Prerequisites check passed"
 echo "📦 Creating namespace..."
 kubectl apply -f "$MANIFEST_DIR/namespace.yaml"
 
-# Deploy storage
-echo "💾 Setting up persistent storage..."
-kubectl apply -f "$MANIFEST_DIR/storage/"
-
-# Wait for PVC to be bound
-echo "⏳ Waiting for PVC to be bound..."
-kubectl wait --for=jsonpath='{.status.phase}'=Bound pvc/blog-postgres-pvc -n "$NAMESPACE" --timeout=60s
-
 # Deploy secrets and config
 echo "🔐 Applying secrets and configuration..."
 kubectl apply -f "$MANIFEST_DIR/secrets/generated-secrets.yaml"
 kubectl apply -f "$MANIFEST_DIR/configmaps/generated-configmap.yaml"
-
-# Deploy database
-echo "🗄️ Deploying PostgreSQL..."
-kubectl apply -f "$MANIFEST_DIR/database/"
-
-# Wait for database to be ready
-echo "⏳ Waiting for PostgreSQL to be ready..."
-kubectl wait --for=condition=available deployment/blog-postgres -n "$NAMESPACE" --timeout=300s
-
-# Deploy cache
-echo "🚀 Deploying Redis..."
-kubectl apply -f "$MANIFEST_DIR/cache/"
-
-# Wait for Redis to be ready
-echo "⏳ Waiting for Redis to be ready..."
-kubectl wait --for=condition=available deployment/blog-redis -n "$NAMESPACE" --timeout=120s
 
 # Deploy application
 echo "🌐 Deploying blog application..."

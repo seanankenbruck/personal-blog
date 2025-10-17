@@ -1,35 +1,26 @@
 #!/bin/bash
-# scripts/generate-secrets.sh - Secure secret generation
+# scripts/generate-secrets.sh - Secret generation for static content blog
 
 set -e
 
-echo "🔐 Generating Kubernetes secrets from environment variables..."
+echo "🔐 Generating Kubernetes secrets..."
 
 # Check if .env exists
 if [ ! -f .env ]; then
     echo "❌ .env file not found!"
     echo "Please copy .env.example to .env and fill in your values:"
-    echo "  cp configs/.env.example .env"
-    echo "  # Edit .env with your real secrets"
+    echo "  cp deploy/configs/.env.example .env"
+    echo "  # Edit .env with your configuration"
     exit 1
 fi
 
 # Source environment variables
 source .env
 
-# Validate required variables
-required_vars=("DB_PASSWORD" "JWT_SECRET" "SMTP_PASSWORD")
-for var in "${required_vars[@]}"; do
-    if [ -z "${!var}" ]; then
-        echo "❌ Required variable $var is not set in .env"
-        exit 1
-    fi
-done
-
-# Generate secrets YAML with real values
+# Generate empty secrets YAML (no secrets needed for static content)
 cat > deploy/manifests/secrets/generated-secrets.yaml << EOF
-# WARNING: This file contains real secrets and should NOT be committed to git
-# Generated from .env file on $(date)
+# Generated for static content blog on $(date)
+# No secrets required for static content deployment
 apiVersion: v1
 kind: Secret
 metadata:
@@ -37,14 +28,9 @@ metadata:
   namespace: blog-app
 type: Opaque
 data:
-  DB_PASSWORD: $(echo -n "${DB_PASSWORD}" | base64 -w 0)
-  JWT_SECRET: $(echo -n "${JWT_SECRET}" | base64 -w 0)
+  # No secrets needed for static content blog
+  # This file is kept for future extensibility
 EOF
-
-# Add optional SMTP password if provided
-if [ -n "$SMTP_PASSWORD" ]; then
-    echo "  SMTP_PASSWORD: $(echo -n "$SMTP_PASSWORD" | base64 -w 0)" >> deploy/manifests/secrets/generated-secrets.yaml
-fi
 
 # Create template file for reference (safe to commit)
 cat > deploy/manifests/secrets/app-secrets-template.yaml << 'EOF'
@@ -57,16 +43,11 @@ metadata:
   namespace: blog-app
 type: Opaque
 data:
-  # These will be populated by generate-secrets.sh from .env file
-  DB_PASSWORD: "<base64-encoded-password>"
-  JWT_SECRET: "<base64-encoded-jwt-secret>"
-  SMTP_PASSWORD: "<base64-encoded-smtp-password>"  # optional
+  # No secrets needed for static content blog
+  # This file is kept for future extensibility
 EOF
 
 echo "✅ Generated deploy/manifests/secrets/generated-secrets.yaml"
 echo "ℹ️  Template available at deploy/manifests/secrets/app-secrets-template.yaml"
 echo ""
-echo "🔒 Security reminders:"
-echo "  - generated-secrets.yaml contains real secrets and is git-ignored"
-echo "  - Only the template file should be committed to git"
-echo "  - Never commit .env file with real values"
+echo "ℹ️  No secrets required for static content blog deployment"

@@ -6,30 +6,18 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"gorm.io/gorm"
 )
 
-// Post represents a blog post persisted to the database
-// GORM tags specify column types and constraints
-// gorm.Model brings ID, CreatedAt, UpdatedAt, DeletedAt
-// DeletedAt enables soft deletes if needed
-// Unique index on slug ensures URL uniqueness
-// Slug is generated from Title
-// Content is stored as text
-// -------------------------------------------
-// Migrate this model with AutoMigrate
-//   db.AutoMigrate(&Post{})
-// -------------------------------------------
-
+// Post represents a blog post
 type Post struct {
-	gorm.Model
-	Title     string    `gorm:"type:varchar(255);not null" json:"title"`
-	Content   string    `gorm:"type:text;not null" json:"content"`
-	Description string    `gorm:"type:text;not null" json:"description"`
-	Slug      string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"slug"`
-	Published bool      `gorm:"default:false" json:"published"`
-	CreatedAt time.Time `gorm:"not null" json:"created_at"`
-	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
+	ID        uint      `json:"id"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	Description string    `json:"description"`
+	Slug      string    `json:"slug"`
+	Published bool      `json:"published"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // GenerateSlug creates a URL-friendly slug from the post title
@@ -81,20 +69,14 @@ func (p *Post) Update(newPost *Post) {
 
 // PostRepository defines the interface for post data access
 type PostRepository interface {
-	Create(ctx context.Context, post *Post) error
 	GetByID(ctx context.Context, id uint) (*Post, error)
 	GetBySlug(ctx context.Context, slug string) (*Post, error)
 	GetAll(ctx context.Context) ([]*Post, error)
-	Update(ctx context.Context, post *Post) error
-	Delete(ctx context.Context, id uint) error
 }
 
 // PostService defines the interface for post business logic
 type PostService interface {
-	CreatePost(ctx context.Context, post *Post) error
 	GetPost(ctx context.Context, id uint) (*Post, error)
 	GetPostBySlug(ctx context.Context, slug string) (*Post, error)
 	GetAllPosts(ctx context.Context) ([]*Post, error)
-	UpdatePost(ctx context.Context, post *Post) error
-	DeletePost(ctx context.Context, id uint) error
 }

@@ -41,6 +41,12 @@ setup:
 	@./deploy/scripts/setup-environment.sh
 	@echo "✅ Setup completed!"
 
+## Build local binary
+build-local:
+	@echo "🔨 Building local binary..."
+	@go build -o blog cmd/main.go
+	@echo "✅ Binary built: ./blog"
+
 ## Build and push Docker image
 build:
 	@echo "🏗️ Building Docker image: $(FULL_IMAGE)"
@@ -82,9 +88,6 @@ status:
 	@echo "Namespace: $(NAMESPACE)"
 	@kubectl get all -n $(NAMESPACE)
 	@echo ""
-	@echo "📊 Storage:"
-	@kubectl get pv,pvc -n $(NAMESPACE)
-	@echo ""
 	@echo "🌐 Ingress:"
 	@kubectl get ingress -n $(NAMESPACE)
 
@@ -99,27 +102,18 @@ shell:
 	@echo "🐚 Opening shell in application pod..."
 	@kubectl exec -it deployment/blog-app -n $(NAMESPACE) -- /bin/sh
 
-## Connect to PostgreSQL database
-db-shell:
-	@echo "🗄️ Connecting to PostgreSQL..."
-	@kubectl exec -it deployment/postgres -n $(NAMESPACE) -- psql -U postgres -d blog
+## View content directory in pod
+content-shell:
+	@echo "📁 Opening content directory..."
+	@kubectl exec -it deployment/blog-app -n $(NAMESPACE) -- ls -la /content/posts
 
-## Backup database
-backup-db:
-	@echo "💾 Creating database backup..."
+## Backup content files
+backup-content:
+	@echo "💾 Creating content backup..."
 	@mkdir -p backups
-	@kubectl exec deployment/postgres -n $(NAMESPACE) -- pg_dump -U postgres blog > backups/blog-backup-$(shell date +%Y%m%d-%H%M%S).sql
-	@echo "✅ Backup created in backups/ directory"
-
-## Restore database from backup
-restore-db:
-	@echo "🔄 Restoring database..."
-	@if [ -z "$(BACKUP_FILE)" ]; then \
-		echo "❌ Please specify BACKUP_FILE=path/to/backup.sql"; \
-		exit 1; \
-	fi
-	@kubectl exec -i deployment/postgres -n $(NAMESPACE) -- psql -U postgres -d blog < $(BACKUP_FILE)
-	@echo "✅ Database restored"
+	@kubectl exec deployment/blog-app -n $(NAMESPACE) -- tar -czf /tmp/content-backup.tar.gz -C /content .
+	@kubectl cp $(NAMESPACE)/deployment/blog-app:/tmp/content-backup.tar.gz backups/content-backup-$(shell date +%Y%m%d-%H%M%S).tar.gz
+	@echo "✅ Content backup created in backups/ directory"
 
 ## Scale application
 scale:
@@ -130,10 +124,9 @@ scale:
 	@echo "⚖️ Scaling application to $(REPLICAS) replicas..."
 	@kubectl scale deployment/blog-app --replicas=$(REPLICAS) -n $(NAMESPACE)
 
-## Clean up all resources including storage
+## Clean up all resources
 clean: undeploy
 	@echo "🧹 Cleaning up all resources..."
-	@kubectl delete pv blog-ssd-pv --ignore-not-found=true
 	@echo "✅ Cleanup completed"
 
 ## Generate secrets from .env file

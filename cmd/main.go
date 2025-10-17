@@ -4,14 +4,13 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/seanankenbruck/blog/internal/auth"
-	"github.com/seanankenbruck/blog/internal/db"
+	"github.com/seanankenbruck/blog/internal/content"
 	"github.com/seanankenbruck/blog/internal/handler"
-	"github.com/seanankenbruck/blog/internal/middleware"
 	"github.com/seanankenbruck/blog/internal/repository"
 	"github.com/seanankenbruck/blog/internal/service"
 )
@@ -28,30 +27,39 @@ func main() {
 		log.Fatalf("Failed to set up templates: %v", err)
 	}
 
-	// Initialize database connection
-	if err := db.Init(); err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+	// Determine content directory path
+	contentDir := os.Getenv("CONTENT_DIR")
+	if contentDir == "" {
+		// Try container path first, then fall back to local development path
+		if _, err := os.Stat("/content/posts"); err == nil {
+			contentDir = "/content/posts"
+		} else {
+			contentDir = "content/posts"
+		}
 	}
 
-	// Initialize JWT configuration
-	if err := auth.InitJWT(); err != nil {
-		log.Fatalf("Failed to initialize JWT: %v", err)
+	// Determine if we're in development mode
+	isDev := gin.Mode() == gin.DebugMode
+
+	// Initialize content loader
+	content.Init(contentDir, isDev)
+	if err := content.LoadPosts(); err != nil {
+		log.Fatalf("Failed to load posts: %v", err)
 	}
+	log.Printf("Loaded posts from %s", contentDir)
+
 
 	// Initialize repositories
-	postRepo := repository.NewPostgresPostRepository(db.DB)
-	userRepo := repository.NewUserRepository()
+	postRepo := repository.NewFilePostRepository()
 
 	// Initialize services
 	postService := service.NewPostService(postRepo)
-	userService := service.NewUserService(userRepo)
 
 	// Initialize handlers
 	postHandler := handler.NewPostHandler(postService)
-	userHandler := handler.NewUserHandler(userService)
 
 	// Set up routes
-	setupRoutes(r, postHandler, userHandler)
+	setupRoutes(r, postHandler)
 
 	// Start server
 	if err := r.Run(":8080"); err != nil {
@@ -59,7 +67,7 @@ func main() {
 	}
 }
 
-func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *handler.UserHandler) {
+func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler) {
 	// Add context timeout middleware
 	r.Use(func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
@@ -68,8 +76,6 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 		c.Next()
 	})
 
-	// Apply authentication middleware
-	r.Use(middleware.AuthMiddleware())
 
 	// Custom 404 handler for nonexistent routes
 	r.NoRoute(func(c *gin.Context) {
@@ -88,25 +94,10 @@ func setupRoutes(r *gin.Engine, postHandler *handler.PostHandler, userHandler *h
 		public.GET("/health", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 		})
-		public.GET("/blog", postHandler.GetPosts)
 		public.GET("/posts", postHandler.GetPosts)
 		public.GET("/posts/:slug", postHandler.GetPost)
 		public.GET("/portfolio", handler.PortfolioPage())
-		public.GET("/login", handler.LoginPage())
-		public.POST("/login", userHandler.Login)
-		public.GET("/logout", userHandler.Logout)
 		public.POST("/preview", postHandler.PreviewMarkdown())
 	}
 
-	// Protected routes
-	editor := r.Group("/")
-	editor.Use(middleware.RequireEditor())
-	{
-		editor.GET("/posts/new", postHandler.NewPostPage)
-		editor.POST("/posts", postHandler.CreatePost)
-		editor.GET("/posts/:slug/edit", postHandler.EditPostPage)
-		editor.PUT("/posts/:slug", postHandler.UpdatePost)
-		editor.DELETE("/posts/:slug", postHandler.DeletePost)
-		editor.POST("/upload", postHandler.UploadImage)
-	}
 }
