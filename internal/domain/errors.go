@@ -9,4 +9,6 @@ var (
 	ErrUserExists = errors.New("user already exists")
 	// ErrInvalidCredentials is returned when authentication fails
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	// ErrNotSupported is returned when an operation is not supported
+	ErrNotSupported = errors.New("operation not supported")
 )

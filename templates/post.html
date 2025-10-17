@@ -13,21 +13,15 @@
     <nav class="navbar">
         <div class="container">
             <div class="nav-links">
-                <a href="/" class="nav-link">Portfolio</a>
-                <!-- <a href="/blog" class="nav-link">Blog</a>
-                {{if .User}}
-                    <span style="color: white; margin-left: auto;">Logged in as {{.User.Username}} ({{.User.Role}})</span>
-                    <a href="/logout" class="nav-link">Logout</a>
-                {{else}}
-                    <a href="/login" class="nav-link" style="margin-left: auto;">Login</a>
-                {{end}} -->
+                <a href="/" class="nav-link">Home</a>
+                <a href="/posts" class="nav-link">Posts</a>
             </div>
         </div>
     </nav>
 
     <main>
         <div class="container">
-            <a href="/blog" class="back-link">Back to all posts</a>
+            <a href="/posts" class="back-link">Back to all posts</a>
 
             <article class="post">
         <h1 class="post-title">{{.Post.Title}}</h1>
@@ -38,36 +32,10 @@
         <div class="prose max-w-none">
             {{ .Post.Content | safeHTML }}
         </div>
-        {{if isEditor $.User}}
-        <div class="post-actions">
-            <a href="/posts/{{.Post.Slug}}/edit" class="btn">Edit Post</a>
-            <button onclick="deletePost('{{.Post.Slug}}')" class="btn btn-danger">Delete Post</button>
-        </div>
-        {{end}}
             </article>
         </div>
     </main>
 
-    <script>
-        function deletePost(slug) {
-            if (confirm('Are you sure you want to delete this post?')) {
-                fetch('/posts/' + slug, {
-                    method: 'DELETE',
-                })
-                .then(response => {
-                    if (response.ok) {
-                        window.location.href = '/';
-                    } else {
-                        alert('Failed to delete post');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to delete post');
-                });
-            }
-        }
-    </script>
     <footer class="footer">© 2025 Sean Ankenbruck • <a href="https://github.com/seanankenbruck">GitHub</a> • <a href="https://linkedin.com/in/seanankenbruck">LinkedIn</a></footer>
 </body>
 </html>
