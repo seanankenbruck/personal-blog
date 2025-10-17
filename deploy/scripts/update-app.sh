@@ -10,7 +10,7 @@ echo "🔄 Updating blog application..."
 
 # Build and push new image
 echo "🏗️ Building new image..."
-./scripts/build-image.sh "$TAG"
+./deploy/scripts/build-image.sh "$TAG"
 
 # Restart deployment to pull new image
 echo "🚀 Restarting application deployment..."
