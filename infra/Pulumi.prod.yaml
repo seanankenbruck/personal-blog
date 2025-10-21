@@ -1,4 +1,3 @@
 config:
-  azure-native:location: eastus
-  blog-infrastructure:appName: seanankenbruck-blog
-  blog-infrastructure:environment: prod
+  pulumi:environment:
+    - seanankenbruck/blog-prod
