@@ -524,6 +524,42 @@ textarea {
     .subscribe-box input[type="email"] {
         min-width: auto;
     }
+
+    .hero-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-lg);
+        padding: 0 var(--spacing-sm);
+    }
+
+    .hero-text {
+        text-align: center;
+    }
+
+    .profile-picture {
+        width: 150px;
+        height: 150px;
+        margin-top: 0;
+    }
+
+    #hero h1 {
+        font-size: 2.5rem;
+    }
+
+    #hero p {
+        font-size: 1.1rem;
+    }
+
+    .social-links {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+
+    .social-link {
+        font-size: 0.85rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
 }
 
 /* Loading animation */
@@ -620,6 +656,96 @@ textarea {
     text-align: center;
     padding: var(--spacing-xl) 0;
     margin-bottom: var(--spacing-xl);
+}
+
+.hero-content {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: var(--spacing-xl);
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+.profile-picture {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid white;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    margin-top: var(--spacing-sm);
+}
+
+.profile-picture:hover {
+    transform: scale(1.05);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.hero-text {
+    text-align: left;
+    flex: 1;
+    max-width: 600px;
+}
+
+.social-links {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(135deg, var(--forest-light), var(--forest-accent));
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius-lg);
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.social-link:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    background: linear-gradient(135deg, var(--forest-medium), var(--forest-light));
+}
+
+.social-link.github {
+    background: linear-gradient(135deg, #24292e, #2d3339);
+}
+
+.social-link.github:hover {
+    background: linear-gradient(135deg, #1a1e22, #24292e);
+}
+
+.social-link.email {
+    background: linear-gradient(135deg, #ea4335, #d33b2c);
+}
+
+.social-link.email:hover {
+    background: linear-gradient(135deg, #d33b2c, #b52d20);
+}
+
+.social-link.linkedin {
+    background: linear-gradient(135deg, #0077b5, #005885);
+}
+
+.social-link.linkedin:hover {
+    background: linear-gradient(135deg, #005885, #004066);
+}
+
+.social-link svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
 }
 
 #hero h1 {

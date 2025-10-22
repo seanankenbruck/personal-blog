@@ -1,0 +1,3 @@
+name: blog-infrastructure
+runtime: nodejs
+description: Personal blog infrastructure on Azure
