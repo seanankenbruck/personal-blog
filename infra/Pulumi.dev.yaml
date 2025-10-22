@@ -1,3 +1,2 @@
-config:
-  pulumi:environment:
-    - seanankenbruck/blog-dev
+environment:
+  - blog-infrastructure/dev
