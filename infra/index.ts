@@ -7,8 +7,11 @@ const azureConfig = new pulumi.Config("azure");
 const environment = pulumi.getStack();
 
 // Read configuration values from ESC
-const location = azureConfig.require("location");
 const appName = config.require("appName");
+const appHost = config.require("appHost");
+const location = azureConfig.require("location");
+const appServiceSku = azureConfig.require("appServiceSku");
+const appServiceSkuTier = azureConfig.require("appServiceSkuTier");
 
 
 // Create resource group
@@ -28,8 +31,8 @@ const appServicePlan = new azure.web.AppServicePlan(`${appName}-${environment}-p
     kind: "Linux",
     reserved: true,
     sku: {
-        name: environment === "prod" ? "B1" : "F1",
-        tier: environment === "prod" ? "Basic" : "Free",
+        name: appServiceSku,
+        tier: appServiceSkuTier,
     },
     tags: {
         Environment: environment,
@@ -92,7 +95,7 @@ if (environment === "prod") {
     const customDomain = new azure.web.WebAppHostNameBinding(`${appName}-${environment}-domain`, {
         resourceGroupName: resourceGroup.name,
         name: appService.name,
-        hostName: "blog.seanankenbruck.com",
+        hostName: appHost,
     });
 }
 
