@@ -1,12 +1,12 @@
 name: Deploy Infrastructure
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'infra/**'
-      - '.github/workflows/deploy-infra.yaml'
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'infra/**'
+  #     - '.github/workflows/deploy-infra.yaml'
   workflow_dispatch:
     inputs:
       stack:
@@ -18,17 +18,14 @@ on:
           - dev
           - prod
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy-infra:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
-
-    env:
-      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - name: Checkout code
@@ -59,7 +56,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             STACK="${{ github.event.inputs.stack }}"
           else
-            STACK="dev"
+            STACK="prod"
           fi
           echo "Deploying stack: $STACK"
           echo "STACK_NAME=$STACK" >> $GITHUB_ENV
@@ -70,6 +67,12 @@ jobs:
           command: preview
           work-dir: ./infra
           stack-name: ${{ env.STACK_NAME }}
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          ARM_USE_OIDC: true
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     #   - name: Deploy infrastructure
     #     working-directory: ./infra
