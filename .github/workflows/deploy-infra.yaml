@@ -1,0 +1,84 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+      - '.github/workflows/deploy-infra.yaml'
+  workflow_dispatch:
+    inputs:
+      stack:
+        description: "Pulumi stack to deploy"
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+env:
+  PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+jobs:
+  deploy-infra:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup node env
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Azure login (oidc)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Pulumi
+        uses: pulumi/actions@v5
+
+      - name: Install dependencies
+        working-directory: ./infra
+        run: npm install
+
+      - name: Select Pulumi stack
+        working-directory: ./infra
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            STACK="${{ github.event.inputs.stack }}"
+          else
+            STACK="prod"
+          fi
+          echo "Deploying stack: $STACK"
+          pulumi stack select $STACK
+
+      - name: Preview infrastructure changes
+        working-directory: ./infra
+        run: pulumi preview --diff
+
+      - name: Deploy infrastructure
+        working-directory: ./infra
+        run: pulumi up --yes
+
+      - name: Export outputs
+        working-directory: ./infra
+        run: |
+          echo "APP_SERVICE_NAME=$(pulumi stack output appServiceName)" >> $GITHUB_OUTPUT
+          echo "RESOURCE_GROUP=$(pulumi stack output resourceGroupName)" >> $GITHUB_OUTPUT
+        id: infra
+    
+    outputs:
+      app_service_name: ${{ steps.infra.outputs.APP_SERVICE_NAME }}
+      resource_group: ${{ steps.infra.outputs.RESOURCE_GROUP }}
