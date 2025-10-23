@@ -18,13 +18,13 @@ on:
           - dev
           - prod
 
-env:
-  PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-
 jobs:
   deploy-infra:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
+
+    env:
+      PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
     permissions:
       id-token: write
@@ -47,7 +47,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Install Pulumi
-        uses: pulumi/actions@v5
+        uses: pulumi/actions@v6
 
       - name: Install dependencies
         working-directory: ./infra
@@ -65,20 +65,23 @@ jobs:
           pulumi stack select $STACK
 
       - name: Preview infrastructure changes
-        working-directory: ./infra
-        run: pulumi preview --diff
+        uses: pulumi/actions@v6
+        with:
+          command: preview
+          args: --yes
+          work-dir: ./infra
 
-      - name: Deploy infrastructure
-        working-directory: ./infra
-        run: pulumi up --yes
+    #   - name: Deploy infrastructure
+    #     working-directory: ./infra
+    #     run: pulumi up --yes
 
-      - name: Export outputs
-        working-directory: ./infra
-        run: |
-          echo "APP_SERVICE_NAME=$(pulumi stack output appServiceName)" >> $GITHUB_OUTPUT
-          echo "RESOURCE_GROUP=$(pulumi stack output resourceGroupName)" >> $GITHUB_OUTPUT
-        id: infra
+    #   - name: Export outputs
+    #     working-directory: ./infra
+    #     run: |
+    #       echo "APP_SERVICE_NAME=$(pulumi stack output appServiceName)" >> $GITHUB_OUTPUT
+    #       echo "RESOURCE_GROUP=$(pulumi stack output resourceGroupName)" >> $GITHUB_OUTPUT
+    #     id: infra
     
-    outputs:
-      app_service_name: ${{ steps.infra.outputs.APP_SERVICE_NAME }}
-      resource_group: ${{ steps.infra.outputs.RESOURCE_GROUP }}
+    # outputs:
+    #   app_service_name: ${{ steps.infra.outputs.APP_SERVICE_NAME }}
+    #   resource_group: ${{ steps.infra.outputs.RESOURCE_GROUP }}
