@@ -59,17 +59,17 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             STACK="${{ github.event.inputs.stack }}"
           else
-            STACK="prod"
+            STACK="dev"
           fi
           echo "Deploying stack: $STACK"
-          pulumi stack select $STACK
+          echo "STACK_NAME=$STACK" >> $GITHUB_ENV
 
       - name: Preview infrastructure changes
         uses: pulumi/actions@v6
         with:
           command: preview
-          args: --yes
           work-dir: ./infra
+          stack-name: ${{ env.STACK_NAME }}
 
     #   - name: Deploy infrastructure
     #     working-directory: ./infra
