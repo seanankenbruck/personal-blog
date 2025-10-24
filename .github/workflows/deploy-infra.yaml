@@ -69,19 +69,15 @@ jobs:
           stack-name: ${{ env.STACK_NAME }}
 
       - name: Deploy infrastructure
+        id: pulumi
         uses: pulumi/actions@v6
         with:
           command: up
           work-dir: ./infra
           stack-name: ${{ env.STACK_NAME }}
 
-      - name: Export outputs
-        id: infra
-        working-directory: ./infra
+      - name: Add pulumi outputs to summary
         run: |
-          echo "APP_SERVICE_NAME=$(pulumi stack output appServiceName)" >> $GITHUB_OUTPUT
-          echo "RESOURCE_GROUP=$(pulumi stack output resourceGroupName)" >> $GITHUB_OUTPUT
-    
-    outputs:
-      app_service_name: ${{ steps.infra.outputs.APP_SERVICE_NAME }}
-      resource_group: ${{ steps.infra.outputs.RESOURCE_GROUP }}
+          echo "### Pulumi Stack Outputs ###" >> $GITHUB_STEP_SUMMARY
+          echo "APP_SERVICE_NAME=$(steps.pulumi.outputs.appServiceName)" >> $GITHUB_STEP_SUMMARY
+          echo "RESOURCE_GROUP=$(steps.pulumi.outputs.resourceGroupName)" >> $GITHUB_STEP_SUMMARY
