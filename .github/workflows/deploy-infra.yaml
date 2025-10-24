@@ -76,11 +76,11 @@ jobs:
           stack-name: ${{ env.STACK_NAME }}
 
       - name: Export outputs
+        id: infra
         working-directory: ./infra
         run: |
           echo "APP_SERVICE_NAME=$(pulumi stack output appServiceName)" >> $GITHUB_OUTPUT
           echo "RESOURCE_GROUP=$(pulumi stack output resourceGroupName)" >> $GITHUB_OUTPUT
-        id: infra
     
     outputs:
       app_service_name: ${{ steps.infra.outputs.APP_SERVICE_NAME }}
