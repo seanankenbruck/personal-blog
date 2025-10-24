@@ -75,7 +75,6 @@ jobs:
 
     environment:
       name: ${{ github.event.inputs.environment || 'dev' }}
-      url: ${{ steps.deploy.outputs.webapp-url }} # need to determine how to get this
 
     steps:
       - name: Azure login oidc
@@ -89,15 +88,15 @@ jobs:
         id: deploy
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}
+          app-name: ${{ env.AZURE_APP_SERVICE_NAME }}
           images: ${{ needs.build-and-push.outputs.image_tag }}
 
       - name: Get webapp url
         id: get-url
         run: |
           WEBAPP_URL=$(az webapp show \
-          --name ${{ secrets.AZURE_APP_SERVICE_NAME }} \
-          --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.AZURE_APP_SERVICE_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --query defaultHostName \
           --output tsv)
           echo "webapp_url=https://$WEBAPP_URL" >> $GITHUB_OUTPUT
