@@ -90,12 +90,29 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Set image tag
+        id: set-image
+        run: |
+          # Get the first tag from the comma-separated list
+          IMAGE_TAG=$(echo "${{ needs.build-and-push.outputs.image_tag }}" | cut -d',' -f1)
+          echo "image=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Configure app service with container image
+        run: |
+          az webapp config container set \
+            --name ${{ secrets.AZURE_APP_SERVICE_NAME }} \
+            --resource-group ${{ secrets.AZURE_APP_SERVICE_RESOURCE_GROUP }} \
+            --docker-custom-image-name ${{ steps.set-image.outputs.image }} \
+            --docker-registry-server-url https://index.docker.io/v1 \
+            --docker-registry-server-user ${{ secrets.DOCKERHUB_USERNAME }} \
+            --docker-registry-server-password ${{ secrets.DOCKERHUB_TOKEN }} \
+            --enable-app-service-storage false
+
       - name: Deploy to azure app service
         id: deploy
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}
-          images: ${{ needs.build-and-push.outputs.image_tag }}
 
       - name: Get webapp url
         id: get-url
