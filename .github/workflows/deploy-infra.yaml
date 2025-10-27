@@ -81,4 +81,4 @@ jobs:
           echo "### Pulumi Stack Outputs ###" >> $GITHUB_STEP_SUMMARY
           echo "APP_SERVICE_NAME=${{ steps.pulumi.outputs.appServiceName }}" >> $GITHUB_STEP_SUMMARY
           echo "APP_SERVICE_URL=${{ steps.pulumi.outputs.appServiceUrl }}" >> $GITHUB_STEP_SUMMARY
-          echo "RESOURCE_GROUP=${{ steps.pulumi.outputs.resourceGroupName }}" >> $GITHUB_STEP_SUMMARY
+          echo "APP_SERVICE_RESOURCE_GROUP=${{ steps.pulumi.outputs.resourceGroupName }}" >> $GITHUB_STEP_SUMMARY
