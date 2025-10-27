@@ -94,15 +94,15 @@ jobs:
         id: deploy
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ env.AZURE_APP_SERVICE_NAME }}
+          app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}
           images: ${{ needs.build-and-push.outputs.image_tag }}
 
       - name: Get webapp url
         id: get-url
         run: |
           WEBAPP_URL=$(az webapp show \
-          --name ${{ env.AZURE_APP_SERVICE_NAME }} \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ secrets.AZURE_APP_SERVICE_NAME }} \
+          --resource-group ${{ secrets.AZURE_APP_SERVICE_RESOURCE_GROUP }} \
           --query defaultHostName \
           --output tsv)
           echo "webapp_url=https://$WEBAPP_URL" >> $GITHUB_OUTPUT
