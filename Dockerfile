@@ -24,7 +24,9 @@ COPY templates/ ./templates/
 COPY content/ ./content/
 
 # Build the application with optimizations
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
+# Use TARGETARCH to build for the correct architecture automatically
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} \
     go build \
     -ldflags='-w -s -extldflags "-static"' \
     -a -installsuffix cgo \
