@@ -4,7 +4,7 @@ date: 2025-12-01T14:30:00Z
 slug: "development-on-raspberry-pi"
 tags: ["technical", "development", "raspberry pi", "kubernetes"]
 description: "Building an environment for development on Raspberry Pi"
-published: true
+published: false
 ---
 
 # Developing on Raspberry Pi
