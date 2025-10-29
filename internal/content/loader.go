@@ -22,8 +22,7 @@ type Post struct {
 	Date        time.Time `yaml:"date"`
 	Tags        []string  `yaml:"tags"`
 	Description string    `yaml:"description"`
-	Draft       bool      `yaml:"draft"`
-	Published   bool      `yaml:"published"` // Alias for draft (inverse)
+	Published   bool      `yaml:"published"` // Controls whether post is visible
 	Content     string    `yaml:"-"`         // Raw markdown content
 	HTMLContent string    `yaml:"-"`         // Rendered HTML
 }
@@ -35,8 +34,7 @@ type FrontMatter struct {
 	Date        time.Time `yaml:"date"`
 	Tags        []string  `yaml:"tags"`
 	Description string    `yaml:"description"`
-	Draft       bool      `yaml:"draft"`
-	Published   bool      `yaml:"published"`
+	Published   bool      `yaml:"published"` // Controls whether post is visible
 }
 
 var (
@@ -84,14 +82,9 @@ func LoadPosts() error {
 			return fmt.Errorf("error loading %s: %w", path, err)
 		}
 
-		// Skip draft posts in production mode
-		if !isDev && post.Draft {
-			return nil
-		}
-
-		// Also check Published field (if true, it's not a draft)
-		if !post.Published && !isDev {
-			return nil
+		// Only include published posts
+		if !post.Published {
+			return nil // Skip unpublished posts in production
 		}
 
 		posts = append(posts, post)
@@ -135,7 +128,6 @@ func loadPostFromFile(path string) (*Post, error) {
 		Date:        frontMatter.Date,
 		Tags:        frontMatter.Tags,
 		Description: frontMatter.Description,
-		Draft:       frontMatter.Draft,
 		Published:   frontMatter.Published,
 		Content:     markdown,
 		HTMLContent: htmlContent,
@@ -144,11 +136,6 @@ func loadPostFromFile(path string) (*Post, error) {
 	// If slug is empty, generate it from the filename
 	if post.Slug == "" {
 		post.Slug = generateSlugFromFilename(path)
-	}
-
-	// If Published is set, use it to determine draft status
-	if post.Published {
-		post.Draft = false
 	}
 
 	return post, nil

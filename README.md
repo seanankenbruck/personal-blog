@@ -1,96 +1,79 @@
 # Personal Blog
 
-A modern, test-driven personal blog built with Go, featuring OpenTelemetry instrumentation.
+A modern, test-driven personal blog built with Go. Posts are rendered from static Markdown files. The app is containerized and can be deployed to any kubernetes cluster via the deployment scripts in `./deploy` or published to Azure App Service via GitHub Actions.
 
 ## Features
 
-- RESTful API using Gin web framework
-- PostgreSQL database for content storage
-- OpenTelemetry instrumentation for metrics, logs, and traces
-- Comprehensive test suite
-- Clean architecture pattern
+- HTTP server using Gin
+- Posts sourced from Markdown in `content/posts`
+- Server-side Markdown rendering to HTML templates
+- Simple file-based content workflow (commit a `.md` to publish)
+- Docker image published to Docker Hub
+- GitHub Actions pipelines for app and infra
 
 ## Prerequisites
 
 - Go 1.24.5 or later
-- PostgreSQL 12 or later
-- Docker (optional, for development)
+- Docker (for building/running the container)
 
-## Getting Started
+## Getting Started (Local)
 
 1. Clone the repository
-2. Install dependencies:
+2. Install Go dependencies:
    ```bash
-   go mod download
-   go mod tidy
+   go mod download && go mod tidy
    ```
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-4. Update the `.env` file with your configuration
-5. Run the application:
+3. Run the application:
    ```bash
    go run cmd/main.go
    ```
+4. Visit `http://localhost:8080`
 
-## Database
+### Adding a Post
 
-This application uses PostgreSQL via [GORM](https://gorm.io/) for data persistence. The schema is automatically migrated on startup.
+Add a Markdown file under `content/posts` with front matter in the filename `YYYY-MM-DD-my-post.md`. The server discovers posts at startup via the file repository.
 
-1. Configure your database connection in `.env`:
-   ```
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_USER=postgres
-   DB_PASSWORD=postgres
-   DB_NAME=blog
-   DB_SSLMODE=disable
-   ```
-2. To apply (auto) migrations, start the application:
-   ```bash
-   go run cmd/main.go
-   ```
-3. To add a new domain model:
-   - Define a struct in `internal/domain/<model>.go` with appropriate GORM tags.
-   - Register it in the `AutoMigrate(&domain.NewModel{})` call in `internal/db/db.go`.
-   - Restart the application to apply the new migration.
-4. Connect to database from command line
-   ```bash
-   export PGPASSWORD=postgres
-   psql -h localhost -U postgres -d postgres
-   \l
-   ```
+## Docker
+
+The Dockerfile is multi-stage. It supports dynamic architecture using `ARG TARGETARCH` with a default of `amd64`.
+
+Build locally:
+```bash
+docker build -t smankenb/personal-blog:local .
+```
+
+On Apple Silicon or Raspberry Pi (arm64):
+```bash
+docker build --platform linux/arm64 \
+  --build-arg TARGETARCH=arm64 \
+  -t smankenb/personal-blog:arm64 .
+```
 
 ## Testing
 
-Run the test suite:
 ```bash
 go test ./...
 ```
 
-## OpenTelemetry
+## Deployment Overview
 
-The application is instrumented with OpenTelemetry. To collect and visualize telemetry data:
+- Infrastructure (resource group, App Service, etc.) is managed with Pulumi in `infra/`
+- App deployment builds and pushes a Docker image, then updates the Azure App Service
+- GitHub Environments (`dev`, `prod`) hold per-environment secrets such as `AZURE_APP_SERVICE_NAME` and `AZURE_APP_SERVICE_RESOURCE_GROUP`
 
-1. Set up an OpenTelemetry Collector
-2. Configure the collector endpoint in your `.env` file
-3. The application will automatically send metrics, logs, and traces to the collector
+See `infra/README.md` for infrastructure instructions and GitHub Actions for the CI/CD flow.
 
 ## Project Structure
 
 ```
 .
-├── cmd/                # Application entry points
-├── internal/          # Private application code
-│   ├── config/       # Configuration management
-│   ├── domain/       # Domain models
-│   ├── repository/   # Data access layer
-│   ├── service/      # Business logic
-│   └── transport/    # API handlers
-├── pkg/              # Public packages
-├── test/             # Test utilities and fixtures
-└── docs/             # Documentation
+├── cmd/                # Application entry point
+├── content/           # Markdown posts
+├── internal/          # Application code (config, handlers, services)
+├── static/            # Static assets
+├── templates/         # HTML templates
+├── infra/             # Pulumi IaC for Azure
+└── .github/workflows/ # CI/CD pipelines
 ```
 
 ## License

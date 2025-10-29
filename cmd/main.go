@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/seanankenbruck/blog/internal/content"
 	"github.com/seanankenbruck/blog/internal/handler"
 	"github.com/seanankenbruck/blog/internal/repository"
@@ -16,6 +17,9 @@ import (
 )
 
 func main() {
+	// Load .env file if it exists (ignore error if not found)
+	_ = godotenv.Load()
+
 	// Initialize router
 	r := gin.Default()
 
