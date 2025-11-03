@@ -4,7 +4,7 @@ date: 2025-12-01T14:30:00Z
 slug: "development-on-raspberry-pi"
 tags: ["technical", "development", "raspberry pi", "kubernetes"]
 description: "Building an environment for development on Raspberry Pi"
-published: false
+published: true
 ---
 
 # Developing on Raspberry Pi
@@ -70,8 +70,10 @@ Now for the fun part—the actual build. I won't replicate the excellent step-by
 ### The Hardware Stack
 
 My cluster consists of three Raspberry Pi units with a somewhat unconventional mix:
-- **1x Raspberry Pi 5 (4GB RAM)** - Designated as the control plane node
-- **2x Raspberry Pi 4B (8GB RAM)** - Serving as worker nodes
+```
+- 1 Raspberry Pi 5 (4GB RAM) - Designated as the control plane node
+- 2 Raspberry Pi 4B (8GB RAM) - Serving as worker nodes
+```
 
 This configuration came about because I already owned the Pi 5 and didn't want it collecting dust. While most guides recommend using identical hardware for consistency, mixing generations turned out to be educational—in ways both good and frustrating.
 
@@ -80,13 +82,15 @@ This configuration came about because I already owned the Pi 5 and didn't want i
 **Housing Everything**: I opted for a Cloudlet cluster case, which provides mounting for three Raspberry Pis, a network switch, and includes surprisingly effective cooling fans. The case keeps everything organized and stackable, though cable management becomes an art form when you're dealing with power cables, ethernet connections, and USB devices. Pro tip: label everything before you mount it.
 
 **Component Cost Breakdown**:
+```
 - 3x Raspberry Pi units: ~$200-250
 - Cloudlet cluster case: ~$60
 - Network switch (5-port): ~$20
 - Power supplies: ~$40
 - MicroSD cards: ~$30
 - Miscellaneous cables: ~$20
-- **Total**: Approximately $370-420
+- Total: Approximately $370-420
+```
 
 The fans included with the case work surprisingly well, keeping all three units cool even under load. The Pi 5's different board layout and header placement required some creative mounting, but it ultimately fit just fine. Here are pictures of the finished product.
 
@@ -104,9 +108,9 @@ The fans included with the case work surprisingly well, keeping all three units 
 
 One of the most important decisions was how to structure the network. I wanted isolation for security and experimentation purposes, but also needed internet access for pulling container images and packages. The solution? A two-tier network setup.
 
-**The Topology**:
-- **Home Network** (192.168.1.x) - My regular home router and devices
-- **Cluster Network** (10.0.0.x) - Isolated network for the Kubernetes cluster
+**The Topology**:<br>
+- **Home Network** (192.168.1.x) - My regular home router and devices<br>
+- **Cluster Network** (10.0.0.x) - Isolated network for the Kubernetes cluster<br>
 - **Bridge**: A small travel router connecting both networks
 
 This configuration provides several benefits:
@@ -218,16 +222,16 @@ Is Kubernetes overkill for a simple blog? Absolutely. But the skills and scripts
 
 After several months of running this cluster for development, here are the insights I wish I'd known upfront:
 
-**What Worked Better Than Expected**:
-- **Stability**: The cluster has been remarkably stable. Uptime is limited primarily by intentional experimentation and occasional power outages, not hardware failures
-- **Performance**: For development workloads, the performance is entirely adequate. Build times are reasonable, and application response times match what I'd see in the cloud
-- **Learning Value**: The hands-on experience has been invaluable. I've learned more about networking, storage, and Kubernetes internals in three months than in years of using managed services
+**What Worked Better Than Expected**:<br>
+- **Stability**: The cluster has been remarkably stable. Uptime is limited primarily by intentional experimentation and occasional power outages, not hardware failures<br>
+- **Performance**: For development workloads, the performance is entirely adequate. Build times are reasonable, and application response times match what I'd see in the cloud<br>
+- **Learning Value**: The hands-on experience has been invaluable. I've learned more about networking, storage, and Kubernetes internals in three months than in years of using managed services<br>
 - **Cost Savings**: After the initial investment, my monthly "infrastructure costs" are about $3 in electricity versus $200+ for comparable cloud resources
 
-**Unexpected Challenges**:
-- **ARM Image Availability**: More packages support ARM64 now, but you'll still encounter images that don't. Budget extra time for this
-- **SD Card Failures**: MicroSD cards eventually fail. I learned to keep backups and consider them consumables rather than permanent storage
-- **Heat Management**: Under sustained load, heat becomes a concern even with fans. Monitor temperatures and ensure adequate ventilation
+**Unexpected Challenges**:<br>
+- **ARM Image Availability**: More packages support ARM64 now, but you'll still encounter images that don't. Budget extra time for this<br>
+- **SD Card Failures**: MicroSD cards eventually fail. I learned to keep backups and consider them consumables rather than permanent storage<br>
+- **Heat Management**: Under sustained load, heat becomes a concern even with fans. Monitor temperatures and ensure adequate ventilation<br>
 - **Network Debugging**: Without cloud provider tools, network issues require old-school debugging—tcpdump, ping, traceroute, and patience
 
 **Would I Do It Again?**: Absolutely, without hesitation. The combination of hands-on learning, cost savings, and always-available infrastructure makes this one of the best investments I've made in my technical education.
@@ -240,15 +244,15 @@ Building a Kubernetes cluster on Raspberry Pi hardware isn't just about saving m
 
 **It's a Real Development Environment**: This isn't a toy or a learning simulation. The blog you're reading right now was developed and tested on this cluster. I've deployed databases, caching layers, and monitoring stacks. I've simulated node failures, tested backup and restore procedures, and experimented with different networking configurations. When I eventually deploy applications to production cloud environments, I do so with confidence because I've already worked through the difficult parts on my own hardware.
 
-**The Economics Make Sense**: The $370-420 initial investment paid for itself in two months compared to equivalent cloud infrastructure. But beyond direct cost savings, there's something liberating about experimenting without watching a cost meter. Want to leave the cluster running 24/7? Go ahead. Want to deploy ten services just to see how they interact? No problem. Want to break things and rebuild from scratch? The only cost is your time.
+**The Economics Make Sense**: The $370-420 initial investment paid for itself in two months compared to equivalent cloud infrastructure. But beyond direct cost savings, there's something liberating about experimenting without watching a cost meter. Want to leave the cluster running 24x7? Go ahead. Want to deploy ten services just to see how they interact? No problem. Want to break things and rebuild from scratch? The only cost is your time.
 
 **The Tactile Satisfaction**: There's something deeply satisfying about building and managing physical hardware. The gentle hum of cooling fans, the blinking network lights, the ability to walk over and see your cluster running—it creates a connection to your work that purely virtual infrastructure can't match.
 
-**For Whom Is This Worthwhile?**: This approach isn't for everyone. If you just want to deploy applications and don't care about infrastructure internals, stick with managed services. But if you're:
-- Learning Kubernetes and want deep, hands-on experience
-- Building side projects without recurring costs
-- Developing DevOps or SRE skills
-- Teaching or demonstrating infrastructure concepts
+**For Whom Is This Worthwhile?**: This approach isn't for everyone. If you just want to deploy applications and don't care about infrastructure internals, stick with managed services. But if you're:<br>
+- Learning Kubernetes and want deep, hands-on experience<br>
+- Building side projects without recurring costs<br>
+- Developing DevOps or SRE skills<br>
+- Teaching or demonstrating infrastructure concepts<br>
 - Or simply curious about how systems work at a fundamental level
 
 ...then a Raspberry Pi Kubernetes cluster might be one of the best investments you can make.
@@ -258,7 +262,7 @@ The cluster sits on my desk as a constant reminder that you don't need expensive
 
 If you're considering building your own cluster, I encourage you to take the plunge. The learning curve is real, but the rewards—in knowledge, capabilities, and cost savings—make it absolutely worthwhile.
 
-**Resources and Next Steps**:
-- [Anthony Simon's Comprehensive Guide](https://anthonynsimon.com/blog/kubernetes-cluster-raspberry-pi/)
-- [MicroK8s Documentation](https://microk8s.io/docs)
-- [This Blog's Deployment Scripts on GitHub](https://github.com/seanankenbruck/personal-blog/tree/main/deploy)
+**Resources and Next Steps**:<br>
+- [Anthony Simon's Comprehensive Guide](https://anthonynsimon.com/blog/kubernetes-cluster-raspberry-pi/)<br>
+- [MicroK8s Documentation](https://microk8s.io/docs)<br>
+- [This Blog's Deployment Scripts on GitHub](https://github.com/seanankenbruck/personal-blog/tree/main/deploy)<br>
