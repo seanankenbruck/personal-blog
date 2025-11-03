@@ -146,7 +146,7 @@ Joining the worker nodes to the control plane was equally straightforward—the 
 
 Here's where things got interesting. By default, Kubernetes storage is ephemeral—restart a pod and any data it wrote disappears. This is fine for stateless applications but completely unworkable for databases, file uploads, or anything that needs to persist data between deployments.
 
-The cloud-native solution would be to use cloud storage (S3, Azure Blob Storage, etc.), but I wanted to keep everything local. Enter the **Samsung T7 1TB Portable SSD**, a compact USB drive that provides fast, reliable storage for about $100.
+The cloud-native solution would be to use cloud storage (Amazon S3, Azure Blob Storage, etc.), but I wanted to keep everything local. Enter the **Samsung T7 1TB Portable SSD**, a compact USB drive that provides fast, reliable storage for about $100.
 
 **The Setup**: I connected the T7 to the control plane node's USB 3.0 port and configured it as a mount point at `/mnt/persistent-storage`. This sounds straightforward, but getting it working reliably required several steps:
 
@@ -242,9 +242,7 @@ Building a Kubernetes cluster on Raspberry Pi hardware isn't just about saving m
 
 **The Economics Make Sense**: The $370-420 initial investment paid for itself in two months compared to equivalent cloud infrastructure. But beyond direct cost savings, there's something liberating about experimenting without watching a cost meter. Want to leave the cluster running 24/7? Go ahead. Want to deploy ten services just to see how they interact? No problem. Want to break things and rebuild from scratch? The only cost is your time.
 
-**It Scales With Your Ambitions**: As I've grown more comfortable with the cluster, I've added more sophisticated workloads—observability stacks with Prometheus and Grafana, CI/CD pipelines, and service meshes. Each new project benefits from the infrastructure I've already built. The deployment scripts and Kubernetes manifests become templates for future projects, accelerating development over time.
-
-**The Tactile Satisfaction**: There's something deeply satisfying about building and managing physical hardware. The gentle hum of cooling fans, the blinking network lights, the ability to walk over and see your cluster running—it creates a connection to your work that purely virtual infrastructure can't match. When your application is deployed and serving traffic, it's not running in some abstract data center; it's running right there, on your desk, powered by hardware you assembled.
+**The Tactile Satisfaction**: There's something deeply satisfying about building and managing physical hardware. The gentle hum of cooling fans, the blinking network lights, the ability to walk over and see your cluster running—it creates a connection to your work that purely virtual infrastructure can't match.
 
 **For Whom Is This Worthwhile?**: This approach isn't for everyone. If you just want to deploy applications and don't care about infrastructure internals, stick with managed services. But if you're:
 - Learning Kubernetes and want deep, hands-on experience
@@ -255,15 +253,12 @@ Building a Kubernetes cluster on Raspberry Pi hardware isn't just about saving m
 
 ...then a Raspberry Pi Kubernetes cluster might be one of the best investments you can make.
 
-**What's Next**: I've already started planning cluster expansion—adding a fourth node for true high-availability testing, implementing a proper service mesh, and experimenting with GitOps workflows. The beauty of this setup is that each enhancement is both a learning opportunity and a practical improvement to my development environment.
-
+**What's Next**:
 The cluster sits on my desk as a constant reminder that you don't need expensive cloud infrastructure to build impressive things. Sometimes, $400 worth of Raspberry Pis and the willingness to dig into how things really work is all you need.
 
-If you're considering building your own cluster, I encourage you to take the plunge. The learning curve is real, but the rewards—in knowledge, capabilities, and cost savings—make it absolutely worthwhile. Plus, you'll have some great stories about debugging network configurations at 2 AM.
+If you're considering building your own cluster, I encourage you to take the plunge. The learning curve is real, but the rewards—in knowledge, capabilities, and cost savings—make it absolutely worthwhile.
 
 **Resources and Next Steps**:
 - [Anthony Simon's Comprehensive Guide](https://anthonynsimon.com/blog/kubernetes-cluster-raspberry-pi/)
 - [MicroK8s Documentation](https://microk8s.io/docs)
 - [This Blog's Deployment Scripts on GitHub](https://github.com/seanankenbruck/personal-blog/tree/main/deploy)
-
-Now, if you'll excuse me, I need to go deploy something new to my cluster. Because I can, and it won't cost me a dime.
