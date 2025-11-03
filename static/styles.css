@@ -340,6 +340,29 @@ main {
     margin: var(--spacing-md) 0;
 }
 
+/* Figure with caption styling */
+.post-content figure {
+    margin: var(--spacing-lg) auto;
+    max-width: 700px;
+    text-align: center;
+}
+
+.post-content figure img {
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    display: block;
+}
+
+.post-content figcaption {
+    margin-top: var(--spacing-sm);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.5;
+}
+
 /* Post actions */
 .post-actions {
     margin-top: var(--spacing-lg);
