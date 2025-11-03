@@ -266,3 +266,12 @@ If you're considering building your own cluster, I encourage you to take the plu
 - [Anthony Simon's Comprehensive Guide](https://anthonynsimon.com/blog/kubernetes-cluster-raspberry-pi/)<br>
 - [MicroK8s Documentation](https://microk8s.io/docs)<br>
 - [This Blog's Deployment Scripts on GitHub](https://github.com/seanankenbruck/personal-blog/tree/main/deploy)<br>
+
+---
+
+<div class="post-navigation">
+  <a href="/posts/welcome-to-my-blog" class="nav-article prev">
+    <span class="nav-label">Previous Article</span>
+    <span class="nav-title">Welcome to My Blog</span>
+  </a>
+</div>

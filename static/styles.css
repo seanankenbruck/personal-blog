@@ -535,8 +535,9 @@ textarea {
     }
 
     .nav-links {
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-direction: column;
+        width: 100%;
+        gap: var(--spacing-xs);
     }
 
     .post {
@@ -1048,6 +1049,113 @@ textarea {
 .subscription-success .btn {
     display: inline-block;
     margin-top: var(--spacing-md);
+}
+
+/* Post navigation (previous/next article links) */
+.post-navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 2px solid var(--stone-lighter);
+}
+
+.nav-article {
+    flex: 1;
+    max-width: 48%;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md);
+    background: white;
+    border: 2px solid var(--stone-lighter);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-article::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--forest-medium), var(--ocean-medium));
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.nav-article:hover::before {
+    transform: scaleX(1);
+}
+
+.nav-article:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--forest-light);
+}
+
+.nav-article.prev {
+    align-items: flex-start;
+}
+
+.nav-article.next {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.nav-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.nav-article.prev .nav-label::before {
+    content: '←';
+    font-size: 1.2em;
+    color: var(--forest-medium);
+}
+
+.nav-article.next .nav-label::after {
+    content: '→';
+    font-size: 1.2em;
+    color: var(--forest-medium);
+}
+
+.nav-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--forest-dark);
+    line-height: 1.4;
+}
+
+.nav-article:hover .nav-title {
+    color: var(--ocean-dark);
+}
+
+/* Responsive navigation */
+@media (max-width: 768px) {
+    .post-navigation {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .nav-article {
+        max-width: 100%;
+    }
+
+    .nav-article.next {
+        align-items: flex-start;
+        text-align: left;
+    }
 }
 
 /* Custom scrollbar */
