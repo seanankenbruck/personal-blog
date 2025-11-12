@@ -80,7 +80,7 @@ jobs:
       contents: read
 
     environment:
-      name: ${{ github.event.inputs.environment || 'dev' }}
+      name: ${{ github.event.inputs.environment || 'prod' }}
 
     steps:
       - name: Azure login oidc
