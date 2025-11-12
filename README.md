@@ -1,5 +1,7 @@
 # Personal Blog
 
+[![codecov](https://codecov.io/gh/seanankenbruck/personal-blog/graph/badge.svg?token=30DNBFU5QA)](https://codecov.io/gh/seanankenbruck/personal-blog)
+
 A modern, test-driven personal blog built with Go. Posts are rendered from static Markdown files. The app is containerized and can be deployed to any kubernetes cluster via the deployment scripts in `./deploy` or published to Azure App Service via GitHub Actions.
 
 ## Features
