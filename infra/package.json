@@ -11,7 +11,7 @@
     },
     "dependencies": {
       "@pulumi/pulumi": "^3.0.0",
-      "@pulumi/azure-native": "^2.0.0"
+      "@pulumi/azure-native": "^3.10.1"
     },
     "devDependencies": {
       "@types/node": "^20.0.0",

@@ -9,6 +9,7 @@ const environment = pulumi.getStack();
 // Read configuration values from ESC
 const appName = config.require("appName");
 const appHost = config.require("appHost");
+const dnsResourceGroup = config.require("dnsResourceGroup");
 const location = azureConfig.require("location");
 const appServiceSku = azureConfig.require("appServiceSku");
 const appServiceSkuTier = azureConfig.require("appServiceSkuTier");
@@ -92,11 +93,54 @@ const appService = new  azure.web.WebApp(`${appName}-${environment}-app`, {
 
 // Configure custom domain (prod only)
 if (environment === "prod") {
-    const customDomain = new azure.web.WebAppHostNameBinding(`${appName}-${environment}-domain`, {
+    // Get the custom domain verification ID from the App Service
+    const verificationId = appService.customDomainVerificationId;
+
+    // Extract zone name and subdomain
+    const domainParts = appHost.split('.');
+    const zoneName = domainParts.slice(-2).join('.');
+    const subdomain = domainParts.slice(0, -2).join('.');
+
+    // Create TXT record for domain verification
+    const verifyTxt = new azure.dns.RecordSet(`${appName}-verify-txt`, {
+        resourceGroupName: dnsResourceGroup,
+        zoneName: zoneName,
+        recordType: "TXT",
+        relativeRecordSetName: `asuid.${subdomain}`,
+        ttl: 3600,
+        txtRecords: verificationId.apply(id => [{ value: [id!] }]),
+    });
+
+    // Create CNAME record for the custom domain
+    const cname = new azure.dns.RecordSet(`${appName}-cname`, {
+        resourceGroupName: dnsResourceGroup,
+        zoneName: zoneName,
+        recordType: "CNAME",
+        relativeRecordSetName: subdomain,
+        ttl: 3600,
+        cnameRecord: {
+            cname: appService.defaultHostName,
+        },
+    });
+
+    // Get app service managed certificate details (created manually in portal)
+    const managedCert = pulumi.all([appHost, resourceGroup.name, appService.name]).apply(([host, rgName, appName]) =>
+        azure.web.getCertificateOutput({
+            resourceGroupName: rgName,
+            name: `${host}-${appName}`
+        })
+    );
+
+    // Create the custom domain binding (depends on TXT record)
+    const binding = new azure.web.WebAppHostNameBinding(`${appName}-${environment}-binding`, {
         resourceGroupName: resourceGroup.name,
         name: appService.name,
         hostName: appHost,
-    });
+        azureResourceName: "Website",
+        customHostNameDnsRecordType: "CName",
+        sslState: "SniEnabled",
+        thumbprint: managedCert.apply(cert => cert.thumbprint),
+    }, { dependsOn: [verifyTxt, cname] });
 }
 
 // Export important values
