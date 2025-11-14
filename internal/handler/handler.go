@@ -1,18 +1,19 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"time"
-	"context"
+
+	"html/template"
+	"io"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/seanankenbruck/blog/internal/domain"
-	"html/template"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
-	"os"
-	"io"
+	"github.com/seanankenbruck/blog/internal/domain"
 )
 
 // SetupTemplates configures the template engine with custom functions
@@ -62,7 +63,6 @@ func GetPosts(svc domain.PostService) gin.HandlerFunc {
 	}
 }
 
-
 func GetPost(svc domain.PostService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		slug := c.Param("slug")
@@ -95,8 +95,6 @@ func GetPost(svc domain.PostService) gin.HandlerFunc {
 	}
 }
 
-
-
 func HomePage(svc domain.PostService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		posts, err := svc.GetAllPosts(c)
@@ -113,17 +111,8 @@ func HomePage(svc domain.PostService) gin.HandlerFunc {
 		// Default to HTML response
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"Title": "Home",
-			"Year": time.Now().Year(),
+			"Year":  time.Now().Year(),
 			"Posts": recentPosts,
-		})
-	}
-}
-
-func AboutPage() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.HTML(http.StatusOK, "about.html", gin.H{
-			"Title": "About",
-			"Year": time.Now().Year(),
 		})
 	}
 }
@@ -132,13 +121,10 @@ func PortfolioPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.HTML(http.StatusOK, "portfolio.html", gin.H{
 			"Title": "Portfolio",
-			"Year": time.Now().Year(),
+			"Year":  time.Now().Year(),
 		})
 	}
 }
-
-
-
 
 // PreviewMarkdown returns a handler function that renders markdown to HTML
 func (h *PostHandler) PreviewMarkdown() gin.HandlerFunc {
@@ -192,8 +178,3 @@ func (h *PostHandler) GetPosts(c *gin.Context) {
 func (h *PostHandler) GetPost(c *gin.Context) {
 	GetPost(h.postService)(c)
 }
-
-
-
-
-
