@@ -8,16 +8,17 @@ import (
 	"time"
 )
 
+// Content in this file is reserved for future database integration.
 // Post represents a blog post
 type Post struct {
-	ID        uint      `json:"id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
+	ID          uint      `json:"id"`
+	Title       string    `json:"title"`
+	Content     string    `json:"content"`
 	Description string    `json:"description"`
-	Slug      string    `json:"slug"`
-	Published bool      `json:"published"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Slug        string    `json:"slug"`
+	Published   bool      `json:"published"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // GenerateSlug creates a URL-friendly slug from the post title
