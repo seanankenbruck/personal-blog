@@ -205,3 +205,60 @@ Content here.`
 		}
 	})
 }
+
+func TestParseFrontMatter(t *testing.T) {
+	t.Run("Invalid front matter format returns error", func(t *testing.T) {
+		invalidFM := `title: "Missing dashes"
+		date: 2024-01-15T10:00:00Z
+		`
+
+		_, _, err := parseFrontMatter(invalidFM)
+		if err == nil {
+			t.Error("parseFrontMatter() expected error for invalid format, got nil")
+		}
+	})
+
+	t.Run("Invalid yaml content returns error", func(t *testing.T) {
+		invalidYAML := `---
+		title: "Test Post"
+		date: invalid-date-format
+		---`
+
+		_, _, err := parseFrontMatter(invalidYAML)
+		if err == nil {
+			t.Error("parseFrontMatter() expected error for invalid YAML, got nil")
+		}
+	})
+
+	t.Run("Valid front matter parsed correctly", func(t *testing.T) {
+		validFM := `---
+title: "Valid Post"
+slug: "valid-post"
+date: 2024-01-15T10:00:00Z
+tags: ["test"]
+description: "This is a valid post"
+published: true
+---
+
+Unpublished content.`
+
+		fm, content, err := parseFrontMatter(validFM)
+		if err != nil {
+			t.Errorf("parseFrontMatter() unexpected error: %v", err)
+		}
+
+		if fm.Title != "Valid Post" {
+			t.Errorf("Expected title 'Valid Post', got '%s'", fm.Title)
+		}
+		if fm.Slug != "valid-post" {
+			t.Errorf("Expected slug 'valid-post', got '%s'", fm.Slug)
+		}
+		if !fm.Published {
+			t.Error("Expected published to be true")
+		}
+		expectedContent := "Unpublished content."
+		if content != expectedContent {
+			t.Errorf("Expected content '%s', got '%s'", expectedContent, content)
+		}
+	})
+}
