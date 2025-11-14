@@ -1,6 +1,7 @@
 package content
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -261,4 +262,161 @@ Unpublished content.`
 			t.Errorf("Expected content '%s', got '%s'", expectedContent, content)
 		}
 	})
+}
+
+func TestGenerateSlugFromFileName(t *testing.T) {
+	tests := []struct {
+		filename string
+		expected string
+	}{
+		{"2024-01-15-my-first-post.md", "my-first-post"},
+		{"2023-12-31-year-end-review.md", "year-end-review"},
+		{"no-date-slug.md", "no-date-slug"},
+		{"2024-02-29-leap-year-post.md", "leap-year-post"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.filename, func(t *testing.T) {
+			slug := generateSlugFromFilename(tt.filename)
+			if slug != tt.expected {
+				t.Errorf("generateSlugFromFilename(%s) = %s; want %s", tt.filename, slug, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGetRecentPosts(t *testing.T) {
+	// Setup: create a temporary content directory with test posts
+	tempDir := t.TempDir()
+
+	postsContent := []string{
+		`---
+title: "Post 1"
+slug: "post-1"
+date: 2024-01-10T10:00:00Z
+description: "First post"
+published: true
+---
+
+Content of post 1.`,
+		`---
+title: "Post 2"
+slug: "post-2"
+date: 2024-01-15T10:00:00Z
+description: "Second post"
+published: true
+---
+
+Content of post 2.`,
+		`---
+title: "Post 3"
+slug: "post-3"
+date: 2024-01-20T10:00:00Z
+description: "Third post"
+published: true
+---
+
+Content of post 3.`,
+	}
+
+	for i, content := range postsContent {
+		filename := filepath.Join(tempDir, fmt.Sprintf("post%d.md", i))
+		if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+	}
+
+	// Initialize and load posts
+	Init(tempDir, false)
+	if err := LoadPosts(); err != nil {
+		t.Fatalf("LoadPosts() unexpected error: %v", err)
+	}
+
+	// Test GetRecentPosts
+	recentPosts, err := GetRecentPosts(2)
+	if err != nil {
+		t.Errorf("GetRecentPosts() unexpected error: %v", err)
+	}
+
+	if len(recentPosts) != 2 {
+		t.Errorf("Expected 2 recent posts, got %d", len(recentPosts))
+	}
+
+	if recentPosts[0].Title != "Post 3" || recentPosts[1].Title != "Post 2" {
+		t.Errorf("GetRecentPosts() returned incorrect posts")
+	}
+}
+
+func TestReload(t *testing.T) {
+	// Setup: create a temporary content directory with test posts
+	tempDir := t.TempDir()
+
+	initialPost := `---
+title: "Initial Post"
+slug: "initial-post"
+date: 2024-01-10T10:00:00Z
+description: "Initial post"
+published: true
+---
+
+Content of initial post.`
+
+	if err := os.WriteFile(filepath.Join(tempDir, "initial.md"), []byte(initialPost), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Initialize and load posts
+	Init(tempDir, false)
+	if err := LoadPosts(); err != nil {
+		t.Fatalf("LoadPosts() unexpected error: %v", err)
+	}
+
+	// Verify initial post is loaded
+	posts, err := GetAllPosts()
+	if err != nil {
+		t.Fatalf("GetAllPosts() unexpected error: %v", err)
+	}
+	if len(posts) != 1 || posts[0].Title != "Initial Post" {
+		t.Fatalf("Initial post not loaded correctly")
+	}
+
+	// Add a new post
+	newPost := `---
+title: "New Post"
+slug: "new-post"
+date: 2024-01-15T10:00:00Z
+description: "Newly added post"
+published: true
+---
+
+Content of new post.`
+
+	if err := os.WriteFile(filepath.Join(tempDir, "new.md"), []byte(newPost), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Call Reload to refresh posts
+	if err := Reload(); err != nil {
+		t.Fatalf("Reload() unexpected error: %v", err)
+	}
+
+	// Verify both posts are now loaded
+	posts, err = GetAllPosts()
+	if err != nil {
+		t.Fatalf("GetAllPosts() unexpected error: %v", err)
+	}
+	if len(posts) != 2 {
+		t.Fatalf("Expected 2 posts after reload, got %d", len(posts))
+	}
+
+	foundNewPost := false
+	for _, post := range posts {
+		if post.Title == "New Post" {
+			foundNewPost = true
+			break
+		}
+	}
+	if !foundNewPost {
+		t.Fatalf("Newly added post not found after reload")
+	}
 }
