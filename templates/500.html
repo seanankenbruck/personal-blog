@@ -12,6 +12,11 @@
 <body>
     <nav class="navbar">
         <div class="container">
+            <div class="hamburger" onclick="this.classList.toggle('active'); document.querySelector('.nav-links').classList.toggle('active');">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
             <div class="nav-links">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/posts" class="nav-link">Posts</a>
