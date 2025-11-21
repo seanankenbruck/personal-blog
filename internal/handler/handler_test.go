@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -260,4 +261,103 @@ func TestGetPost(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "Test Post")
 	})
+}
+
+func TestPostHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Create temporary content directory with test posts
+	tempDir := t.TempDir()
+	testPost := `---
+title: "Handler Test Post"
+slug: "handler-test-post"
+date: 2024-01-15T10:00:00Z
+description: "Test description"
+published: true
+---
+
+Test content.`
+
+	if err := os.WriteFile(filepath.Join(tempDir, "handler-test.md"), []byte(testPost), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	content.Init(tempDir, false)
+	if err := content.LoadPosts(); err != nil {
+		t.Fatalf("LoadPosts() failed: %v", err)
+	}
+
+	repo := repository.NewFilePostRepository()
+	svc := service.NewPostService(repo)
+	handler := NewPostHandler(svc)
+
+	assert.NotNil(t, handler)
+
+	// Setup router with PostHandler methods
+	router := gin.New()
+	router.SetFuncMap(template.FuncMap{
+		"safeHTML": func(text string) template.HTML {
+			return template.HTML(text)
+		},
+	})
+
+	templateDir := t.TempDir()
+	indexTemplate := `<!DOCTYPE html><html><head><title>Test</title></head><body>{{range .Posts}}<div>{{.Title}}</div>{{end}}</body></html>`
+	postTemplate := `<!DOCTYPE html><html><head><title>{{.Post.Title}}</title></head><body><h1>{{.Post.Title}}</h1></body></html>`
+	errorTemplate := `<!DOCTYPE html><html><head><title>404</title></head><body><h1>404</h1></body></html>`
+
+	os.WriteFile(filepath.Join(templateDir, "index.html"), []byte(indexTemplate), 0644)
+	os.WriteFile(filepath.Join(templateDir, "post.html"), []byte(postTemplate), 0644)
+	os.WriteFile(filepath.Join(templateDir, "404.html"), []byte(errorTemplate), 0644)
+
+	router.LoadHTMLGlob(filepath.Join(templateDir, "*.html"))
+
+	router.GET("/", handler.HomePage)
+	router.GET("/posts", handler.GetPosts)
+	router.GET("/posts/:slug", handler.GetPost)
+	router.POST("/preview", handler.PreviewMarkdown())
+
+	t.Run("PostHandler.HomePage", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("PostHandler.GetPosts", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, "/posts", nil)
+		req.Header.Set("Accept", "application/json")
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("PostHandler.GetPost", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodGet, "/posts/handler-test-post", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("PreviewMarkdown", func(t *testing.T) {
+		req, _ := http.NewRequest(http.MethodPost, "/preview", strings.NewReader("# Hello World"))
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "<h1")
+		assert.Contains(t, w.Body.String(), "Hello World")
+	})
+}
+
+func TestGetPostsHTMLResponse(t *testing.T) {
+	router, _ := setupTestEnvironment(t)
+	router.GET("/posts", GetPosts(service.NewPostService(repository.NewFilePostRepository())))
+
+	// Test HTML response (no Accept header)
+	req, _ := http.NewRequest(http.MethodGet, "/posts", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Header().Get("Content-Type"), "text/html")
 }

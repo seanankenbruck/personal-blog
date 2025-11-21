@@ -119,3 +119,99 @@ func TestGetPostBySlug(t *testing.T) {
 
 	log.Println("GetPostBySlug test completed")
 }
+
+func TestGetPost(t *testing.T) {
+	log.Println("Testing GetPost...")
+
+	mockRepo := newMockPostRepository()
+	service := NewPostService(mockRepo)
+
+	// GetByID returns ErrNotSupported in the mock
+	_, err := service.GetPost(context.Background(), 1)
+	if err != domain.ErrNotSupported {
+		t.Errorf("Expected ErrNotSupported, got: %v", err)
+	}
+
+	log.Println("GetPost test completed")
+}
+
+func TestGetPostBySlugContextCancelled(t *testing.T) {
+	log.Println("Testing GetPostBySlug with cancelled context...")
+
+	mockRepo := newMockPostRepository()
+	mockRepo.posts["test-post"] = &domain.Post{Slug: "test-post", Title: "Test Post"}
+	service := NewPostService(mockRepo)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	_, err := service.GetPostBySlug(ctx, "test-post")
+	if err != context.Canceled {
+		t.Errorf("Expected context.Canceled, got: %v", err)
+	}
+
+	log.Println("GetPostBySlug context cancelled test completed")
+}
+
+func TestGetAllPostsContextCancelled(t *testing.T) {
+	log.Println("Testing GetAllPosts with cancelled context...")
+
+	mockRepo := newMockPostRepository()
+	service := NewPostService(mockRepo)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	_, err := service.GetAllPosts(ctx)
+	if err != context.Canceled {
+		t.Errorf("Expected context.Canceled, got: %v", err)
+	}
+
+	log.Println("GetAllPosts context cancelled test completed")
+}
+
+func TestGetPostContextCancelled(t *testing.T) {
+	log.Println("Testing GetPost with cancelled context...")
+
+	mockRepo := newMockPostRepository()
+	service := NewPostService(mockRepo)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	_, err := service.GetPost(ctx, 1)
+	if err != context.Canceled {
+		t.Errorf("Expected context.Canceled, got: %v", err)
+	}
+
+	log.Println("GetPost context cancelled test completed")
+}
+
+// mockReturnsNilPostRepository returns nil for GetBySlug to test nil handling
+type mockReturnsNilPostRepository struct{}
+
+func (m *mockReturnsNilPostRepository) GetByID(ctx context.Context, id uint) (*domain.Post, error) {
+	return nil, nil
+}
+
+func (m *mockReturnsNilPostRepository) GetBySlug(ctx context.Context, slug string) (*domain.Post, error) {
+	return nil, nil
+}
+
+func (m *mockReturnsNilPostRepository) GetAll(ctx context.Context) ([]*domain.Post, error) {
+	return nil, nil
+}
+
+func TestGetPostBySlugReturnsNil(t *testing.T) {
+	log.Println("Testing GetPostBySlug when repo returns nil...")
+
+	mockRepo := &mockReturnsNilPostRepository{}
+	service := NewPostService(mockRepo)
+
+	_, err := service.GetPostBySlug(context.Background(), "any-slug")
+	if err != domain.ErrPostNotFound {
+		t.Errorf("Expected ErrPostNotFound when repo returns nil, got: %v", err)
+	}
+
+	log.Println("GetPostBySlug nil test completed")
+}
