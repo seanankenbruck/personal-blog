@@ -1,6 +1,6 @@
 ---
 title: "Building a Development Environment on Raspberry Pi"
-date: 2025-12-01T14:30:00Z
+date: 2025-11-17T14:30:00Z
 slug: "development-on-raspberry-pi"
 tags: ["technical", "development", "raspberry pi", "kubernetes"]
 description: "Building an environment for development on Raspberry Pi"
