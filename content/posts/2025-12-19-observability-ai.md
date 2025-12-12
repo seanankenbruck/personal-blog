@@ -4,7 +4,7 @@ date: 2025-12-19T10:00:00Z
 slug: "ai-powered-natural-language-observability"
 tags: ["observability", "AI", "PromQL", "Prometheus", "DevOps", "SRE", "developer-tools"]
 description: "Discover how AI-powered natural language querying is breaking down the barriers to observability."
-published: true
+published: false
 ---
 
 ## The Observability Barrier
@@ -79,6 +79,7 @@ The system is built on a sophisticated multi-layer architecture that balances AI
 ```
 
 **The Flow:**
+
 1. **Ask** - You submit a natural language query via API or UI
 2. **Understand** - AI analyzes your question with semantic context from your metrics
 3. **Generate** - Claude creates accurate, safe PromQL
@@ -267,26 +268,26 @@ In under two minutes, asking natural questions, you've identified a connection l
 
 When you give AI the ability to generate queries against production systems, safety is paramount. The system implements defense-in-depth:
 
-**1. Read-Only Operations**
+**Read-Only Operations**
 Only query operations are supported. No write, delete, or configuration changes are possible.
 
-**2. Metric Allowlisting**
+**Metric Allowlisting**
 The AI can only use metrics that exist in the discovered catalog. It cannot query arbitrary metrics or guess metric names.
 
-**3. Query Validation**
+**Query Validation**
 Every generated query passes through safety checks before execution:
 - Time range validation (prevents queries spanning months/years)
 - Cardinality limits (prevents high-cardinality explosions)
 - Complexity limits (prevents deeply nested aggregations)
 - Pattern blocklists (prevents known dangerous patterns)
 
-**4. Rate Limiting**
+**Rate Limiting**
 Per-user and per-API-key rate limits prevent accidental or malicious system overload.
 
-**5. Audit Logging**
+**Audit Logging**
 All queries are logged with user context for security auditing and compliance.
 
-**6. Cost Controls**
+**Cost Controls**
 AI token usage is tracked and can be budgeted to prevent unexpected costs.
 
 ## Getting Started in 5 Minutes
@@ -318,18 +319,21 @@ For production deployments, Kubernetes Helm charts are provided with configurabl
 This is an evolving project with an ambitious roadmap:
 
 **Short-term improvements:**
+
 - Multi-turn conversations (ask follow-up questions with context)
 - Query explanation mode (explain what a PromQL query does in plain English)
 - Suggested related queries based on current results
 - Export to dashboard/alert configuration
 
 **Medium-term features:**
+
 - Support for additional backends (VictoriaMetrics, Thanos, Cortex)
 - Anomaly detection ("show me unusual patterns in service X")
 - Natural language alerting ("notify me if checkout errors exceed 5%")
 - Query optimization suggestions
 
 **Long-term vision:**
+
 - Root cause analysis assistance
 - Automated runbook generation
 - Integration with incident management platforms
