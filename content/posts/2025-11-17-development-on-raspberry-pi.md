@@ -95,12 +95,12 @@ This configuration came about because I already owned the Pi 5 and didn't want i
 The fans included with the case work surprisingly well, keeping all three units cool even under load. The Pi 5's different board layout and header placement required some creative mounting, but it ultimately fit just fine. Here are pictures of the finished product.
 
 <figure>
-  <img src="../../static/images/raspberry-pi-post//raspberry-pi-case-front.jpg" alt="Front view of Raspberry Pi cluster in Cloudlet case">
+  <img src="../../static/images/raspberry-pi-post/raspberry-pi-case-front.jpg" alt="Front view of Raspberry Pi cluster in Cloudlet case">
   <figcaption>Front view of the Cloudlet case housing three Raspberry Pi units with integrated cooling fans</figcaption>
 </figure>
 
 <figure>
-  <img src="../../static/images/raspberry-pi-post//raspberry-pi-case-back.jpg" alt="Back view of Raspberry Pi cluster in Cloudlet case">
+  <img src="../../static/images/raspberry-pi-post/raspberry-pi-case-back.jpg" alt="Back view of Raspberry Pi cluster in Cloudlet case">
   <figcaption>Rear view showing the two power cables for the network switch and Pi 5</figcaption>
 </figure>
 
