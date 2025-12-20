@@ -4,7 +4,7 @@ date: 2025-12-19T10:00:00Z
 slug: "ai-powered-natural-language-observability"
 tags: ["observability", "AI", "PromQL", "Prometheus", "DevOps", "SRE", "developer-tools"]
 description: "Discover how AI-powered natural language querying is breaking down the barriers to observability."
-published: false
+published: true
 ---
 
 ## The Observability Barrier
