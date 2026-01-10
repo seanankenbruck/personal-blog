@@ -826,7 +826,7 @@ This handles common LLM quirks like wrapping JSON in markdown code blocks.
 
 ## Getting Started with the Repository
 
-Ready to start learning? Here's how to dive in:
+Ready to dive in? The complete set of code files is available on [Github](https://github.com/seanankenbruck/agentic-patterns). Here is how to get started:
 
 ### 1. Start with Prompt Chaining
 ```bash
@@ -895,8 +895,15 @@ The future of software development is agentic. These patterns are your foundatio
 - **Agentic Patterns Guide:** [Building Effective Agents](https://www.anthropic.com/engineering/building-effective-agents)
 - **Autonomous Agent Implementation:** [Extended Example](https://github.com/seanankenbruck/autonomous-research-agent)
 
-Ready to build smarter AI applications? Clone the repository and start with pattern 1. Your journey into agentic development begins now.
+Ready to build smarter AI applications? Your journey into agentic development begins now.
 
 ---
 
 *Have questions or want to contribute? Open an issue or submit a pull request. This is a living project that evolves with the community's needs and the rapidly advancing field of agentic AI.*
+
+<div class="post-navigation">
+  <a href="/posts/ai-powered-natural-language-observability" class="nav-article prev">
+    <span class="nav-label">Previous Article</span>
+    <span class="nav-title">Observability AI</span>
+  </a>
+</div>

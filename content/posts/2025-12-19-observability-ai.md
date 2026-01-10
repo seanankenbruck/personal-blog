@@ -388,4 +388,8 @@ The barrier between developers and their observability data is artificial. It's 
     <span class="nav-label">Previous Article</span>
     <span class="nav-title">Development on Raspberry Pi</span>
   </a>
+  <a href="/posts/mastering-agentic-patterns" class="nav-article next">
+    <span class="nav-label">Next Article</span>
+    <span class="nav-title">Agentic Patterns Guide</span>
+  </a>
 </div>
