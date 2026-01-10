@@ -50,12 +50,25 @@ Take the generated query, copy it into your chosen Prometheus/Mimir querying too
 
 Let's look at real-world time savings:
 
-| What You Ask | Traditional PromQL Time | Observability AI Time | Query Generated |
-|--------------|------------------------|----------------------|-----------------|
-| "Show me error rate for the payment service" | ~5 minutes | 2 seconds | `sum(rate(http_requests_total{service="payment",status=~"5.."}[5m]))` |
-| "Memory usage across all pods in production" | ~3 minutes | 2 seconds | `sum(container_memory_usage_bytes{namespace="production"}) by (pod)` |
-| "Compare API latency: auth vs checkout" | ~10 minutes | 2 seconds | `histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=~"auth\|checkout"}[5m])) by (service,le))` |
-| "What's breaking right now?" | ~15 minutes | 2 seconds | (Intelligently queries error metrics and recent spikes) |
+**"Show me error rate for the payment service"**
+- Traditional PromQL: ~5 minutes
+- Observability AI: 2 seconds
+- Query Generated: `sum(rate(http_requests_total{service="payment",status=~"5.."}[5m]))`
+
+**"Memory usage across all pods in production"**
+- Traditional PromQL: ~3 minutes
+- Observability AI: 2 seconds
+- Query Generated: `sum(container_memory_usage_bytes{namespace="production"}) by (pod)`
+
+**"Compare API latency: auth vs checkout"**
+- Traditional PromQL: ~10 minutes
+- Observability AI: 2 seconds
+- Query Generated: `histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=~"auth|checkout"}[5m])) by (service,le))`
+
+**"What's breaking right now?"**
+- Traditional PromQL: ~15 minutes
+- Observability AI: 2 seconds
+- Query Generated: (Intelligently queries error metrics and recent spikes)
 
 The third example is particularly illuminating. Writing a histogram quantile query that compares P95 latency across multiple services requires deep PromQL knowledge. With Observability AI, it's a simple question.
 
@@ -374,5 +387,9 @@ The barrier between developers and their observability data is artificial. It's 
   <a href="/posts/development-on-raspberry-pi" class="nav-article prev">
     <span class="nav-label">Previous Article</span>
     <span class="nav-title">Development on Raspberry Pi</span>
+  </a>
+  <a href="/posts/mastering-agentic-patterns" class="nav-article next">
+    <span class="nav-label">Next Article</span>
+    <span class="nav-title">Agentic Patterns Guide</span>
   </a>
 </div>
