@@ -906,4 +906,8 @@ Ready to build smarter AI applications? Your journey into agentic development be
     <span class="nav-label">Previous Article</span>
     <span class="nav-title">Observability AI</span>
   </a>
+   <a href="/posts/clickhouse-metrics-backend" class="nav-article next">
+    <span class="nav-label">Next Article</span>
+    <span class="nav-title">ClickHouse for Metrics</span>
+  </a>
 </div>
